@@ -1,0 +1,23 @@
+[project]
+name = "sqlalchemy-oso-cloud"
+version = "0.1.0"
+description = "First-class SQLAlchemy support for Oso Cloud"
+authors = [
+    {name = "Oso Security, Inc."}
+]
+readme = "README.md"
+requires-python = ">=3.9,<4"
+dependencies = [
+    "sqlalchemy (>=2)",
+    "oso-cloud (>=2)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+testcontainers = "^4.10.0"
+pytest = "^8.4.1"
+
