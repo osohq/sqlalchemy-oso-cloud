@@ -20,4 +20,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.group.dev.dependencies]
 testcontainers = "^4.10.0"
 pytest = "^8.4.1"
+pytest-dotenv = "^0.5.2"
+psycopg2 = "^2.9.10"
 
