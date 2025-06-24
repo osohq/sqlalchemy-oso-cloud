@@ -1,6 +1,6 @@
 import sqlalchemy.orm
 from .query import Query
-from typing import Type, Any, TypeVar, Union
+from typing import Type, TypeVar
 
 
 T = TypeVar("T")
