@@ -2,7 +2,7 @@
 
 We use [Poetry](https://python-poetry.org/) to manage this project.
 After [installing Poetry](https://python-poetry.org/docs/#installation),
-install the project's dependencies with:
+create a virtual environment and install the project's dependencies with:
 
 ```bash
 poetry install --with dev
