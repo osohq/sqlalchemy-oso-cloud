@@ -7,6 +7,9 @@ from sqlalchemy.exc import OperationalError
 import pytest
 from sqlalchemy.orm import Session
 from oso_cloud import Oso, Value
+
+import sqlalchemy_oso_cloud
+
 from .models import Base, Organization, Document
 
 
@@ -42,29 +45,42 @@ def engine(postgres: PostgresContainer):
   return engine
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def session(engine: Engine):
   with Session(engine) as session:
     yield session
 
 @pytest.fixture(scope="session")
-def oso(oso_dev_server: DockerContainer):
+def oso_url(oso_dev_server: DockerContainer):
   host = oso_dev_server.get_container_host_ip()
   port = oso_dev_server.get_exposed_port(8080)
-  oso_url = f"http://{host}:{port}"
-  oso_auth = "e_0123456789_12345_osotesttoken01xiIn"
+  return f"http://{host}:{port}"
+
+@pytest.fixture(scope="session")
+def oso_auth():
+  return "e_0123456789_12345_osotesttoken01xiIn"
+
+@pytest.fixture(scope="session")
+def oso(oso_url: str, oso_auth: str):
   # TODO: move client init into the library itself, since it'll need to init the Oso client itself to provide the data bindings
   oso = Oso(oso_url, oso_auth, data_bindings="tests/data.yaml") 
   with open("tests/policy.polar", "r") as f:
     oso.policy(f.read())
   return oso
 
+@pytest.fixture
+def alice():
+  # TODO: make our mixin automatically turn the model classes into Oso Values
+  return Value("User", "alice")
+
+@pytest.fixture
+def bob():
+  return Value("User", "bob")
 
 @pytest.fixture(autouse=True)
-def setup_oso_data(oso: Oso):
-  # TODO: make our mixin automatically turn the model classes into Oso Values
-  alice_role = ("has_role", Value("User", "alice"), "admin", Value("Organization", "1"))
-  bob_role = ("has_role", Value("User", "bob"), "admin", Value("Organization", "2"))
+def setup_oso_data(oso: Oso, alice: Value, bob: Value):
+  alice_role = ("has_role", alice, "admin", Value("Organization", "1"))
+  bob_role = ("has_role", bob, "admin", Value("Organization", "2"))
   oso.insert(alice_role)
   oso.insert(bob_role)
   yield
@@ -88,3 +104,12 @@ def setup_postgres_data(session: Session):
   session.delete(doc1)
   session.delete(doc2)
   session.commit()
+
+@pytest.fixture(autouse=True)
+def init_sqlalchemy_oso_cloud(oso_url: str, oso_auth: str):
+  sqlalchemy_oso_cloud.init(Base.registry, url=oso_url, api_key=oso_auth)
+
+@pytest.fixture
+def oso_session(engine: Engine):
+  with sqlalchemy_oso_cloud.Session(engine) as session:
+    yield session
