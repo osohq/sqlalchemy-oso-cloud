@@ -16,3 +16,11 @@ To run the test suite, run:
 ```bash
 poetry run pytest
 ```
+
+### Updating test snapshots
+
+If you intentionally change behavior captured in a snapshot, you can update it by running:
+
+```bash
+poetry run pytest --snapshot-update
+```
