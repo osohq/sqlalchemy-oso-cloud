@@ -7,25 +7,50 @@ from .oso import get_oso
 
 T = TypeVar("T")
 
+# todo - multiple permissions for multiple main models
 class Query(sqlalchemy.orm.Query[T]):
   def __init__(self, *args, **kwargs):
       super().__init__(*args, **kwargs)
       self.oso = get_oso()
 
-  def authorized_for(self, actor: Value, action: str) -> Self:
+  def authorized_for(self, actor: Value, action: str, relationship_actions: dict=None) -> Self:
     models = self._extract_models()
-    self.get_related_models(models)
+    print(f"Models to authorize: {[model.__name__ for model in models]}")
+    
+    related_models = self.get_related_models(models)
 
+    processed_models = set()
     options = []
 
     for model in models:
-       options.append(
-          with_loader_criteria(
-              model, 
-              self.create_auth_criteria(actor, action),
-              include_aliases=True
-          )
-       )
+        if model in processed_models:
+            continue
+            
+        options.append(
+            with_loader_criteria(
+                model, 
+                self.create_auth_criteria(actor, action),
+                include_aliases=True
+            )
+        )
+        processed_models.add(model)
+
+    for related_model in related_models:
+        if related_model in processed_models:
+            continue
+        
+        related_action = relationship_actions.get(related_model.__name__, "")
+        if not related_action:
+            continue
+            
+        options.append(
+            with_loader_criteria(
+                related_model,
+                self.create_auth_criteria(actor, related_action),
+                include_aliases=True
+            )
+        )
+        processed_models.add(related_model)
 
     return self.options(*options)
 
@@ -59,18 +84,34 @@ class Query(sqlalchemy.orm.Query[T]):
   def create_auth_criteria(self, actor, action):
     """Factory function to create auth criteria lambda"""
     oso = self.oso
-    print(f"Creating auth criteria for actor: {actor}, action: {action}")
     
-    def auth_criteria(cls, oso=oso, actor=actor, action=action):
+    # Cache for storing generated SQL filters by class
+    filter_cache = {}
+    
+    print(f"Creating new auth criteria for actor: {actor}, action: {action}")
+    
+    def auth_criteria(cls, oso=oso, actor=actor, action=action, filter_cache=filter_cache):
+        cache_key = cls.__name__
+        
+        if cache_key in filter_cache:
+            print(f"Using cached filter for {cache_key}")
+            return filter_cache[cache_key]
+        
+        # Generate the filter
         sql_filter = oso.list_local(
             actor=actor,
             action=action,
-            resource_type=cls.__name__.lower(),
+            resource_type=cls.__name__,
             column=f"{cls.__tablename__}.id"
         )
         auth_subquery = select(cls.id).where(text(sql_filter))
-        print (f"Auth subquery for {cls.__name__}: {auth_subquery}")
-        return cls.id.in_(auth_subquery)
+        criteria = cls.id.in_(auth_subquery)
+        
+        # Cache the result
+        filter_cache[cache_key] = criteria
+        
+        print(f"Generated new filter for {cls.__name__}: {auth_subquery}")
+        return criteria
     
     # Mark this lambda as not tracking closure variables
     auth_criteria.__closure_track_closure_variables__ = False
