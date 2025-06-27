@@ -91,8 +91,8 @@ def setup_oso_data(oso: Oso, alice: Value, bob: Value):
 def setup_postgres_data(session: Session):
   org1 = Organization(id=1, name="acme")
   org2 = Organization(id=2, name="bigco")
-  doc1 = Document(id=1, organization=org1, content="hello")
-  doc2 = Document(id=2, organization=org2, content="world")
+  doc1 = Document(id=1, organization=org1, content="hello", status="draft")
+  doc2 = Document(id=2, organization=org2, content="world", status="published")
   session.add(org1)
   session.add(org2)
   session.add(doc1)

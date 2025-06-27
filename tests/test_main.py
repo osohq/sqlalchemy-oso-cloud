@@ -9,6 +9,7 @@ import sqlalchemy_oso_cloud
 # This is the part our goal is to make nicer
 def test_manual(oso: Oso, session: Session, alice: Value, bob: Value):
   filter = oso.list_local(alice, "read", "Document", "document.id")
+  print(filter)
   documents = session.query(Document).filter(text(filter)).all()
   assert len(documents) == 1
   assert documents[0].id == 1

@@ -1,11 +1,14 @@
+import os
+import yaml
+
 from typing import TypedDict
 from oso_cloud import Oso
 from sqlalchemy import select
-from sqlalchemy.orm import registry, ColumnProperty, Relationship
-import yaml
+from sqlalchemy.orm import Mapper, registry, ColumnProperty, Relationship
+from sqlalchemy.sql.elements import NamedColumn
 from tempfile import NamedTemporaryFile
-import os
-from .orm import Resource, RELATION_INFO_KEY
+
+from .orm import ATTRIBUTE_INFO_KEY, Resource, RELATION_INFO_KEY
 
 class FactConfig(TypedDict):
   query: str
@@ -30,18 +33,36 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
     sql_types[mapper.class_.__name__] = str(id_column.type)
     for attr in mapper.attrs:
       if isinstance(attr, Relationship) and RELATION_INFO_KEY in attr.info:
-        if len(attr.local_columns) != 1:
-          raise ValueError(f"Oso relation {attr.key} must be to a single column")
-        local_column = list(attr.local_columns)[0]
-        key = f"has_relation({mapper.class_.__name__}:_, {attr.key}, {attr.entity.class_.__name__}:_)"
-        query = select(id_column, local_column)
-        facts[key] = {
-          "query": str(query),
-        }
+        key, query = gen_relation_binding(attr, mapper, id_column)
+        facts[key] = query
+      elif isinstance(attr, ColumnProperty) and ATTRIBUTE_INFO_KEY in attr.columns[0].info:
+        key, query = gen_attribute_binding(attr, mapper, id_column)
+        sql_types[attr.key.capitalize()] = str(attr.columns[0].type)
+        facts[key] = query
 
   return {
     "facts": facts,
     "sql_types": sql_types,
+  }
+
+def gen_relation_binding(relationship: Relationship, mapper: Mapper, id_column: NamedColumn) -> tuple[str, FactConfig]:
+  if len(relationship.local_columns) != 1:
+    raise ValueError(f"Oso relation {relationship.key} must be to a single column")
+  local_column = list(relationship.local_columns)[0]
+  key = f"has_relation({mapper.class_.__name__}:_, {relationship.key}, {relationship.entity.class_.__name__}:_)"
+  query = select(id_column, local_column)
+  return key, {
+    "query": str(query),
+  }
+
+def gen_attribute_binding(attribute: ColumnProperty, mapper: Mapper, id_column: NamedColumn) -> tuple[str, FactConfig]:
+  if len(attribute.columns) != 1:
+    raise ValueError(f"Oso attribute {attribute.key} must be a single column")
+  column = attribute.columns[0]
+  key = f"has_{attribute.key}({mapper.class_.__name__}:_, {attribute.key.capitalize()}:_)"
+  query = select(id_column, column)
+  return key, {
+    "query": str(query),
   }
 
 
