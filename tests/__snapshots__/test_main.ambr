@@ -1,0 +1,12 @@
+# serializer version: 1
+# name: test_local_authorization_config_snapshot
+  '''
+  facts:
+    has_relation(Document:_, organization, Organization:_):
+      query: "SELECT document.id, document.organization_id \nFROM document"
+  sql_types:
+    Document: INTEGER
+    Organization: INTEGER
+  
+  '''
+# ---
