@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, Optional
 from oso_cloud import Oso
 from sqlalchemy import select
 from sqlalchemy.orm import registry, ColumnProperty, Relationship
@@ -46,7 +46,7 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
 
 
 # TODO: what if they want multiple DBs/registries?
-oso: Oso | None = None
+oso: Optional[Oso] = None
 
 def init(registry: registry, **kwargs):
   kwargs = { **kwargs }
