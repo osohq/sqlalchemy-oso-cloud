@@ -1,11 +1,14 @@
-from typing import TypedDict, Optional
+import os
+import yaml
+
+from typing import Type, TypedDict, Optional
 from oso_cloud import Oso
 from sqlalchemy import select
-from sqlalchemy.orm import registry, ColumnProperty, Relationship
-import yaml
+from sqlalchemy.orm import Mapper, RelationshipProperty, registry, ColumnProperty
+from sqlalchemy.sql.elements import NamedColumn
 from tempfile import NamedTemporaryFile
-import os
-from .orm import Resource, _RELATION_INFO_KEY
+
+from .orm import _ATTRIBUTE_INFO_KEY, Resource, _RELATION_INFO_KEY
 
 class FactConfig(TypedDict):
   query: str
@@ -29,20 +32,48 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
     id_column = id.columns[0]
     sql_types[mapper.class_.__name__] = str(id_column.type)
     for attr in mapper.attrs:
-      if isinstance(attr, Relationship) and _RELATION_INFO_KEY in attr.info:
-        if len(attr.local_columns) != 1:
-          raise ValueError(f"Oso relation {attr.key} must be to a single column")
-        local_column = list(attr.local_columns)[0]
-        key = f"has_relation({mapper.class_.__name__}:_, {attr.key}, {attr.entity.class_.__name__}:_)"
-        query = select(id_column, local_column)
-        facts[key] = {
-          "query": str(query),
-        }
+      if isinstance(attr, RelationshipProperty) and _RELATION_INFO_KEY in attr.info:
+        key, query = gen_relation_binding(attr, mapper, id_column)
+        facts[key] = query
+      elif isinstance(attr, ColumnProperty) and _ATTRIBUTE_INFO_KEY in attr.columns[0].info:
+        key, query = gen_attribute_binding(attr, mapper, id_column)
+        facts[key] = query
 
   return {
     "facts": facts,
     "sql_types": sql_types,
   }
+
+def gen_relation_binding(relationship: RelationshipProperty, mapper: Mapper, id_column: NamedColumn) -> tuple[str, FactConfig]:
+  if len(relationship.local_columns) != 1:
+    raise ValueError(f"Oso relation {relationship.key} must be to a single column")
+  local_column = list(relationship.local_columns)[0]
+  key = f"has_relation({mapper.class_.__name__}:_, {relationship.key}, {relationship.entity.class_.__name__}:_)"
+  query = select(id_column, local_column)
+  return key, {
+    "query": str(query),
+  }
+
+def gen_attribute_binding(attribute: ColumnProperty, mapper: Mapper, id_column: NamedColumn) -> tuple[str, FactConfig]:
+  if len(attribute.columns) != 1:
+    raise ValueError(f"Oso attribute {attribute.key} must be a single column")
+  column = attribute.columns[0]
+  key_type = to_polar_type(column.type.python_type)
+  key = f"has_{attribute.key}({mapper.class_.__name__}:_, {key_type}:_)"
+  query = select(id_column, column)
+  return key, {
+    "query": str(query),
+  }
+
+def to_polar_type(type: Type) -> str:
+  if issubclass(type, int):
+    return "Integer"
+  elif issubclass(type, str):
+    return "String"
+  elif issubclass(type, bool):
+    return "Boolean"
+  else:
+    raise ValueError(f"Unsupported type: {type}")
 
 
 # TODO: what if they want multiple DBs/registries?
