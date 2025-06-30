@@ -36,3 +36,5 @@ Use `poetry run pytest` to run the test suite.
 
 If you intentionally change behavior captured in a snapshot, you can update it with
 `poetry run pytest --snapshot-update`.
+
+Use `poetry run pdoc` to locally preview the API reference documentation.

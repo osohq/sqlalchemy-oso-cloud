@@ -16,8 +16,8 @@ jobs:
       - uses: octokit/request-action@v2.4.0
         id: members
         with:
-          route: GET /orgs/{org}/members
-          org: osohq
+          route: GET /repos/{repo}/collaborators
+          repo: ${{ github.repository }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: "echo '${{ steps.members.outputs.data }}'"
