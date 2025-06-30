@@ -7,7 +7,7 @@ queries based on your application's authorization logic.
   Let your other services own things like user roles and entitlements. We’ll stitch
   anything relevant into queries over your SQLAlchemy data, with no need to
   sync.
-- Paired with other extensions like `pgvector`, build powerful RAG search over private data.
+- Pair with other extensions like `pgvector` to build powerful RAG search over private data.
 - First-class SQLAlchemy support for unparalleled ergonomics.
 
 ## Install
@@ -28,12 +28,13 @@ in your authorization policy.
 import sqlalchemy_oso_cloud as oso
 
 class Document(Base, oso.Resource):
-  ...
-  state: Mapped[str] = oso.attribute()
+    ...
+    organization: relation(remote="Organization") # TODO(iris): decide on this API
+    state: Mapped[str] = oso.attribute()
 
 class DocumentChunk(Base, oso.Resource):
-  ...
-  document: Mapped["Document"] = oso.relation()
+    ...
+    document: Mapped["Document"] = oso.relation()
 ```
 
 ### Step 2: Write a Polar policy
@@ -45,32 +46,32 @@ Polar is agnostic of where each piece of data comes from.
 actor User {}
 
 resource Organization {
-  roles = ["admin", "member"];
+    roles = ["admin", "member"];
 }
 
 resource Document {
-  roles = ["author"];
-  permissions = ["read", "write"];
-  relations = {
-    organization: Organization
-  };
+    roles = ["author"];
+    permissions = ["read", "write"];
+    relations = {
+      organization: Organization
+    };
 
-  "read" if "author";
-  "read" if "admin" on "organization";
-  "read" if
-    "member" on "organization" and
-    has_state(resource, "published");
+    "read" if "author";
+    "read" if "admin" on "organization";
+    "read" if
+        "member" on "organization" and
+        has_state(resource, "published");
 
-  "write" if "author";
+    "write" if "author";
 }
 
 resource DocumentChunk {
-  permissions = ["read"];
-  relations = {
-    document: Document
-  };
+    permissions = ["read"];
+    relations = {
+        document: Document
+    };
 
-  "read" if "read" on "document";
+    "read" if "read" on "document";
 }
 ```
 
@@ -83,10 +84,10 @@ import sqlalchemy_oso_cloud
 sqlalchemy_oso_cloud.init(Base.registry)
 
 def authorized_rag_retrieval(user, embedding):
-  return select(DocumentChunk)
-    .order_by(DocumentChunk.embedding.l2_distance(embedding))
-    .authorized(user, "read")
-    .limit(10)
+    return select(DocumentChunk)
+        .order_by(DocumentChunk.embedding.l2_distance(embedding))
+        .authorized(user, "read")
+        .limit(10)
 ```
 
 # Reference
