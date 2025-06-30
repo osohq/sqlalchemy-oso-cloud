@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: octokit/request-action@v2.4.0
-        id: members
+        id: allowlist
         with:
           route: GET /repos/{repo}/collaborators
           repo: ${{ github.repository }}
         env:
           GITHUB_TOKEN: ${{ secrets.CLA_ASSISTANT_PERSONAL_ACCESS_TOKEN }}
-      - run: "echo '${{ steps.members.outputs.data }}'"
+      - run: echo '${{ join(fromJson(steps.allowlist.outputs.data).*.login) }}'
       - name: CLA Assistant
         if: github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA' || github.event_name == 'pull_request_target'
         uses: cla-assistant/github-action@v2.6.1
@@ -33,7 +33,7 @@ jobs:
           remote-repository-name: cla-signatures
           path-to-signatures: individual.json
           branch: main
-          allowlist: djanatyn,edaniels,gj,gneray,gsarjeant,jedgresham,killpack,laxjesse,orez-,samscott89,ssglaser,sverch,uncommoncense,vrama628,dependabot,dependabot[bot]
+          allowlist: ${{ join(fromJson(steps.allowlist.outputs.data).*.login) }}
           use-dco-flag: false
           create-file-commit-message: "Creating file for storing CLA signatures"
           signed-commit-message: "$contributorName has signed the CLA in osohq/oso#$pullRequestNo"
