@@ -14,11 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: octokit/request-action@v2.4.0
+        id: members
         with:
           route: GET /orgs/{org}/members
           org: osohq
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: echo ${{ steps.members.outputs.data }}
       - name: CLA Assistant
         if: github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA' || github.event_name == 'pull_request_target'
         uses: cla-assistant/github-action@v2.6.1
