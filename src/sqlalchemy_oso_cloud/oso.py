@@ -5,7 +5,7 @@ from sqlalchemy.orm import registry, ColumnProperty, Relationship
 import yaml
 from tempfile import NamedTemporaryFile
 import os
-from .orm import Resource, RELATION_INFO_KEY
+from .orm import Resource, _RELATION_INFO_KEY
 
 class FactConfig(TypedDict):
   query: str
@@ -29,7 +29,7 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
     id_column = id.columns[0]
     sql_types[mapper.class_.__name__] = str(id_column.type)
     for attr in mapper.attrs:
-      if isinstance(attr, Relationship) and RELATION_INFO_KEY in attr.info:
+      if isinstance(attr, Relationship) and _RELATION_INFO_KEY in attr.info:
         if len(attr.local_columns) != 1:
           raise ValueError(f"Oso relation {attr.key} must be to a single column")
         local_column = list(attr.local_columns)[0]
@@ -49,6 +49,17 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
 oso: Optional[Oso] = None
 
 def init(registry: registry, **kwargs):
+  """
+  Initialize an Oso Cloud client configured to resolve authorization data from your
+  database as specified in your ORM models.
+  See `.orm` for more information on how to map your authorization data.
+
+  :param registry: The SQLAlchemy registry containing your models. For example, `Base.registry`.
+  :param kwargs: Additional keyword arguments to pass to the Oso client constructor, such as `url` and `api_key`.
+  """
+  global oso
+  if oso is not None:
+    raise RuntimeError("sqlalchemy_oso_cloud has already been initialized")
   kwargs = { **kwargs }
   if "url" not in kwargs:
     kwargs["url"] = os.getenv("OSO_URL", "https://api.osohq.com")
@@ -62,10 +73,15 @@ def init(registry: registry, **kwargs):
     yaml.dump(config, f)
     f.flush()
     kwargs["data_bindings"] = f.name
-    global oso
     oso = Oso(**kwargs)
   
 def get_oso() -> Oso:
+  """
+  Get the Oso Cloud client that was created with `init`.
+
+  :return: The Oso Cloud client.
+  """
+  global oso
   if oso is None:
     raise RuntimeError("sqlalchemy_oso_cloud must be initialized before getting the Oso client")
   return oso
