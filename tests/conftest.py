@@ -105,7 +105,7 @@ def setup_postgres_data(session: Session):
   session.delete(doc2)
   session.commit()
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="session")
 def init_sqlalchemy_oso_cloud(oso_url: str, oso_auth: str):
   sqlalchemy_oso_cloud.init(Base.registry, url=oso_url, api_key=oso_auth)
 
