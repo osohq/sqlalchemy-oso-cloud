@@ -4,7 +4,7 @@ import yaml
 from typing import Type, TypedDict
 from oso_cloud import Oso
 from sqlalchemy import select
-from sqlalchemy.orm import Mapper, registry, ColumnProperty, Relationship
+from sqlalchemy.orm import Mapper, RelationshipProperty, registry, ColumnProperty
 from sqlalchemy.sql.elements import NamedColumn
 from tempfile import NamedTemporaryFile
 
@@ -32,7 +32,7 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
     id_column = id.columns[0]
     sql_types[mapper.class_.__name__] = str(id_column.type)
     for attr in mapper.attrs:
-      if isinstance(attr, Relationship) and RELATION_INFO_KEY in attr.info:
+      if isinstance(attr, RelationshipProperty) and RELATION_INFO_KEY in attr.info:
         key, query = gen_relation_binding(attr, mapper, id_column)
         facts[key] = query
       elif isinstance(attr, ColumnProperty) and ATTRIBUTE_INFO_KEY in attr.columns[0].info:
@@ -44,7 +44,7 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
     "sql_types": sql_types,
   }
 
-def gen_relation_binding(relationship: Relationship, mapper: Mapper, id_column: NamedColumn) -> tuple[str, FactConfig]:
+def gen_relation_binding(relationship: RelationshipProperty, mapper: Mapper, id_column: NamedColumn) -> tuple[str, FactConfig]:
   if len(relationship.local_columns) != 1:
     raise ValueError(f"Oso relation {relationship.key} must be to a single column")
   local_column = list(relationship.local_columns)[0]
