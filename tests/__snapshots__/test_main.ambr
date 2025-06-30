@@ -9,7 +9,6 @@
   sql_types:
     Document: INTEGER
     Organization: INTEGER
-    Status: VARCHAR
   
   '''
 # ---
