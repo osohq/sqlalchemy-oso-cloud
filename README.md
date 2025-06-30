@@ -7,7 +7,7 @@ queries based on your application's authorization logic.
   Let your other services own things like user roles and entitlements. We’ll stitch
   anything relevant into queries over your SQLAlchemy data, with no need to
   sync.
-- Pair with other extensions like `pgvector` to build powerful RAG search over private data.
+- Pair with other extensions like `pgvector` to build powerful, secure RAG search over private data.
 - First-class SQLAlchemy support for unparalleled ergonomics.
 
 ## Install
@@ -20,7 +20,7 @@ pip install sqlalchemy-oso-cloud
 
 ### Step 1: Map SQLAlchemy Data
 
-Use the utilities in [sqlalchemy_oso_cloud.orm] to bind
+With the utilities in [sqlalchemy_oso_cloud.orm], bind
 data in your SQLAlchemy models to the Oso facts you'll use
 in your authorization policy.
 
@@ -29,11 +29,14 @@ import sqlalchemy_oso_cloud as oso
 
 class Document(Base, oso.Resource):
     ...
-    organization: relation(remote="Organization") # TODO(iris): decide on this API
+    # TODO(iris): decide on this API
+    organization: relation(remote="Organization")
+    # maps facts like `has_state(Document{"123"}, "published")`
     state: Mapped[str] = oso.attribute()
 
 class DocumentChunk(Base, oso.Resource):
     ...
+    # maps facts like `has_relation(DocumentChunk{"456"}, "document", Document{"123"})`
     document: Mapped["Document"] = oso.relation()
 ```
 
@@ -94,6 +97,7 @@ def authorized_rag_retrieval(user, embedding):
 
 - [API Reference](https://osohq.github.io/sqlalchemy-oso-cloud)
 - [Oso Cloud](https://www.osohq.com/docs)
+  - [Polar](https://www.osohq.com/docs/modeling-in-polar)
   - [Local Authorization](https://www.osohq.com/docs/authorization-data/local-authorization)
   - [Python SDK](https://www.osohq.com/docs/app-integration/client-apis/python)
 - [SQLAlchemy](https://docs.sqlalchemy.org/)
@@ -109,4 +113,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
-See [LICENSE](LICENSE)
+[Apache 2.0](LICENSE)
