@@ -2,7 +2,7 @@ import sqlalchemy.orm
 from sqlalchemy.orm import with_loader_criteria, DeclarativeBase
 from sqlalchemy import text, select
 from oso_cloud import Value
-from typing import TypeVar, Self, Type
+from typing import TypeVar, Self
 from .oso import get_oso
 
 T = TypeVar("T")
@@ -41,31 +41,26 @@ class Query(sqlalchemy.orm.Query[T]):
   
 
 
-  def _create_auth_criteria_for_model(self, model, actor, action):
+  def _create_auth_criteria_for_model(self, model, actor: Value, action: str):
         """Create auth criteria - cache expensive oso.list_local() calls"""
         cache_key = f"{model.__name__}:{actor.id}:{action}"
+
+        if cache_key not in self.filter_cache:
+            sql_filter = self.oso.list_local(
+                actor=actor,
+                action=action,
+                resource_type=model.__name__,
+                column=f"{model.__tablename__}.id"
+            )
+            
+            auth_subquery = select(model.id).where(text(sql_filter))
+            criteria = model.id.in_(auth_subquery)
+            
+            self.filter_cache[cache_key] = criteria
         
-        if cache_key in self.filter_cache:
-            cached_criteria = self.filter_cache[cache_key]
-            def auth_criteria(cls):
-                return cached_criteria
-            auth_criteria.__closure_track_closure_variables__ = False
-            return auth_criteria
-        
-        sql_filter = self.oso.list_local(
-            actor=actor,
-            action=action,
-            resource_type=model.__name__,
-            column=f"{model.__tablename__}.id"
-        )
-        
-        auth_subquery = select(model.id).where(text(sql_filter))
-        criteria = model.id.in_(auth_subquery)
-        
-        self.filter_cache[cache_key] = criteria
+        criteria = self.filter_cache[cache_key]
         
         def auth_criteria(cls):
             return criteria
         
-        auth_criteria.__closure_track_closure_variables__ = False
         return auth_criteria
