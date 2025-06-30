@@ -19,14 +19,14 @@ jobs:
           route: GET /repos/{repo}/collaborators
           repo: ${{ github.repository }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CLA_ASSISTANT_PERSONAL_ACCESS_TOKEN }}
       - run: "echo '${{ steps.members.outputs.data }}'"
       - name: CLA Assistant
         if: github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA' || github.event_name == 'pull_request_target'
         uses: cla-assistant/github-action@v2.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN_GJ_CLA_ASSISTANT }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_ASSISTANT_PERSONAL_ACCESS_TOKEN }}
         with:
           path-to-document: https://github.com/osohq/cla/blob/main/individual.md
           remote-organization-name: osohq
