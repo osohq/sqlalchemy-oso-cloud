@@ -11,5 +11,4 @@ class Query(sqlalchemy.orm.Query[T]):
     for col in self._raw_columns:
       print(col)
     authorization_filter = get_oso().list_local(actor, action, "Document", "document.id") # TODO
-    print("authorization_filter", authorization_filter)
     return self.where(text(authorization_filter))

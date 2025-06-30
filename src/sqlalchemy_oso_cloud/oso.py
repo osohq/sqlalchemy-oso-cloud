@@ -1,7 +1,7 @@
 import os
 import yaml
 
-from typing import TypedDict
+from typing import Type, TypedDict
 from oso_cloud import Oso
 from sqlalchemy import select
 from sqlalchemy.orm import Mapper, registry, ColumnProperty, Relationship
@@ -59,11 +59,22 @@ def gen_attribute_binding(attribute: ColumnProperty, mapper: Mapper, id_column: 
   if len(attribute.columns) != 1:
     raise ValueError(f"Oso attribute {attribute.key} must be a single column")
   column = attribute.columns[0]
-  key = f"has_{attribute.key}({mapper.class_.__name__}:_, {attribute.key.capitalize()}:_)"
+  key_type = to_polar_type(column.type.python_type)
+  key = f"has_{attribute.key}({mapper.class_.__name__}:_, {key_type}:_)"
   query = select(id_column, column)
   return key, {
     "query": str(query),
   }
+
+def to_polar_type(type: Type) -> str:
+  if issubclass(type, int):
+    return "Integer"
+  elif issubclass(type, str):
+    return "String"
+  elif issubclass(type, bool):
+    return "Boolean"
+  else:
+    raise ValueError(f"Unsupported type: {type}")
 
 
 # TODO: what if they want multiple DBs/registries?
