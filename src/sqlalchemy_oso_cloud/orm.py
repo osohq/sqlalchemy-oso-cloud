@@ -3,7 +3,7 @@ Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapp
 [authorization data](https://www.osohq.com/docs/authorization-data) in your ORM models.
 """
 
-from sqlalchemy.orm import MappedColumn, Relationship, mapped_column, relationship
+from sqlalchemy.orm import MappedColumn, mapped_column, relationship
 
 class Resource:
   """
@@ -40,5 +40,5 @@ def attribute(*args, **kwargs) -> MappedColumn:
   Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
   """
   col = mapped_column(*args, **kwargs)
-  col.column.info[ATTRIBUTE_INFO_KEY] = None
+  col.column.info[_ATTRIBUTE_INFO_KEY] = None
   return col
