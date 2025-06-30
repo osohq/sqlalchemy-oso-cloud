@@ -33,8 +33,13 @@ dependencies.
 
 We use [pytest](https://docs.pytest.org/en/stable/) to run tests.
 Use `poetry run pytest` to run the test suite.
-
 If you intentionally change behavior captured in a snapshot, you can update it with
 `poetry run pytest --snapshot-update`.
 
-Use `poetry run pdoc` to locally preview the API reference documentation.
+We use [ruff](https://docs.astral.sh/ruff/) for linting and [mypy](https://mypy-lang.org/)
+for type checking. You can run them with `poetry run ruff check` and `poetry run mypy .`
+respectively.
+
+We use [pdoc](https://pdoc.dev/) to generate the
+[API reference documentation](https://osohq.github.io/sqlalchemy-oso-cloud/).
+Use `poetry run pdoc` to preview it locally.

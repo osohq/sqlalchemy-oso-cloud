@@ -4,6 +4,8 @@
   facts:
     has_relation(Document:_, organization, Organization:_):
       query: "SELECT document.id, document.organization_id \nFROM document"
+    has_status(Document:_, String:_):
+      query: "SELECT document.id, document.status \nFROM document"
   sql_types:
     Document: INTEGER
     Organization: INTEGER

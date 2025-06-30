@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey
-from sqlalchemy_oso_cloud.orm import Resource, relation
+from sqlalchemy_oso_cloud.orm import Resource, relation, attribute
 
 class Base(DeclarativeBase):
   pass
@@ -21,3 +21,4 @@ class Document(Base, Resource):
   # TODO: how do relationships work when there is no foreign key?
   organization: Mapped["Organization"] = relation(back_populates="documents")
   content: Mapped[str]
+  status: Mapped[str] = attribute()
