@@ -37,7 +37,6 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
         facts[key] = query
       elif isinstance(attr, ColumnProperty) and ATTRIBUTE_INFO_KEY in attr.columns[0].info:
         key, query = gen_attribute_binding(attr, mapper, id_column)
-        sql_types[attr.key.capitalize()] = str(attr.columns[0].type)
         facts[key] = query
 
   return {
