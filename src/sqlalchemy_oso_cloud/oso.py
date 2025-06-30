@@ -1,7 +1,7 @@
 import os
 import yaml
 
-from typing import Type, TypedDict, Optional
+from typing import TypedDict, Optional
 from oso_cloud import Oso
 from sqlalchemy import select
 from sqlalchemy.orm import Mapper, RelationshipProperty, registry, ColumnProperty
@@ -67,7 +67,7 @@ def gen_attribute_binding(attribute: ColumnProperty, mapper: Mapper, id_column: 
   if key_type == "Boolean":
     key_shorthand = f"{attribute.key}({mapper.class_.__name__}:_)"
     bindings[key_shorthand] = {
-      "query": str(select(id_column).where(column == True)),
+      "query": str(select(id_column).where(column)),
     }
     key_long = f"{attribute.key}({mapper.class_.__name__}:_, {key_type}:_)"
     bindings[key_long] = {

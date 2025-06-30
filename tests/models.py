@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import Boolean, ForeignKey
+from sqlalchemy import ForeignKey
 from sqlalchemy_oso_cloud.orm import Resource, relation, attribute
 
 class Base(DeclarativeBase):
