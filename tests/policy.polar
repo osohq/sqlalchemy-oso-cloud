@@ -9,4 +9,5 @@ resource Document {
   permissions = ["read"];
   "read" if "admin" on "organization";
   "read" if has_status(resource, "published");
+  "read" if is_public(resource);
 }

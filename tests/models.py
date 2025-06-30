@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey
+from sqlalchemy import Boolean, ForeignKey
 from sqlalchemy_oso_cloud.orm import Resource, relation, attribute
 
 class Base(DeclarativeBase):
@@ -22,3 +22,4 @@ class Document(Base, Resource):
   organization: Mapped["Organization"] = relation(back_populates="documents")
   content: Mapped[str]
   status: Mapped[str] = attribute()
+  is_public: Mapped[bool] = attribute(default=False)
