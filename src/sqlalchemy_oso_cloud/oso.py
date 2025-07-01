@@ -61,24 +61,22 @@ def gen_attribute_binding(attribute: ColumnProperty, mapper: Mapper, id_column: 
   if len(attribute.columns) != 1:
     raise ValueError(f"Oso attribute {attribute.key} must be a single column")
   column = attribute.columns[0]
-  bindings: dict[str, FactConfig] = {}
   key_type = to_polar_type(column.type)
   
   if key_type == "Boolean":
-    key_shorthand = f"{attribute.key}({mapper.class_.__name__}:_)"
-    bindings[key_shorthand] = {
-      "query": str(select(id_column).where(column)),
+    key = f"{attribute.key}({mapper.class_.__name__}:_)"
+    return {
+      key: {
+        "query": str(select(id_column).where(column)),
+      }
     }
-    key_long = f"{attribute.key}({mapper.class_.__name__}:_, {key_type}:_)"
-    bindings[key_long] = {
+    
+  key = f"has_{attribute.key}({mapper.class_.__name__}:_, {key_type}:_)"
+  return {
+    key: {
       "query": str(select(id_column, column)),
     }
-  else:
-    key = f"has_{attribute.key}({mapper.class_.__name__}:_, {key_type}:_)"
-    bindings[key] = {
-      "query": str(select(id_column, column)),
-    }
-  return bindings
+  }
 
 def to_polar_type(column_type: TypeEngine) -> str:
   if isinstance(column_type, Integer):

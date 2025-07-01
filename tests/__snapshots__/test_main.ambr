@@ -8,8 +8,6 @@
       query: "SELECT document.id, document.status \nFROM document"
     is_public(Document:_):
       query: "SELECT document.id \nFROM document \nWHERE document.is_public"
-    is_public(Document:_, Boolean:_):
-      query: "SELECT document.id, document.is_public \nFROM document"
   sql_types:
     Document: INTEGER
     Organization: INTEGER
