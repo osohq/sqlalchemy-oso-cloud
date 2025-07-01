@@ -1,5 +1,5 @@
 import sqlalchemy.orm
-from sqlalchemy.orm import with_loader_criteria, DeclarativeBase
+from sqlalchemy.orm import with_loader_criteria
 from sqlalchemy import text, select
 from oso_cloud import Value
 from typing import TypeVar, Self

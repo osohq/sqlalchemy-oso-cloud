@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from .models import Document
 
 import sqlalchemy_oso_cloud
-from sqlalchemy_oso_cloud import select, AuthorizedSelect
+from sqlalchemy_oso_cloud import select
 
 # This is the part our goal is to make nicer
 def test_manual(oso: Oso, session: Session, alice: Value, bob: Value):

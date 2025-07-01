@@ -1,9 +1,11 @@
 from sqlalchemy.sql import Select
-from sqlalchemy import select as sqlalchemy_select, literal_column
+from sqlalchemy import literal_column, ColumnClause
 from sqlalchemy.orm import DeclarativeBase, with_loader_criteria
 from oso_cloud import Value
-from typing import  Self, Type
+from typing import  TypeVar, Type
 from .oso import get_oso
+
+Self = TypeVar("Self", bound="AuthorizedSelect")
 
 class AuthorizedSelect(Select):
     """A Select subclass that adds authorization functionality"""
@@ -22,7 +24,7 @@ class AuthorizedSelect(Select):
         self._oso = get_oso()
         self._auth_cache = {}
     
-    def authorized_for(self, actor: Value, action: str) -> Self:
+    def authorized_for(self: Self, actor: Value, action: str) -> Self:
         """Add authorization filtering to the select statement"""
         models = self._extract_unique_models()
         options = []
@@ -57,7 +59,7 @@ class AuthorizedSelect(Select):
             column=f"{model.__tablename__}.id"
         )
         
-        criteria = literal_column(sql_filter)
+        criteria: ColumnClause = literal_column(sql_filter)
 
         return lambda cls: criteria
 
