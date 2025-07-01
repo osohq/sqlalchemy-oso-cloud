@@ -65,6 +65,16 @@ def test_authorize_doesnt_bring_in_filtered(oso_session: sqlalchemy_oso_cloud.Se
   )
   assert len(documents) == 0
 
+# In current implementation: chaining .authorized produces an AND intersection of the results
+def test_authorize_chaining(oso_session: sqlalchemy_oso_cloud.Session, alice: Value, bob: Value):
+  documents = (
+      oso_session.query(Document)
+      .authorized(alice, "read")
+      .authorized(bob, "read")
+      .all()
+  )
+  assert len(documents) > 1
+
 def test_multimodel_authorize_raises_error(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
   with pytest.raises(ValueError):
     _documents = oso_session.query(Document, Organization).authorized(alice, "read")
