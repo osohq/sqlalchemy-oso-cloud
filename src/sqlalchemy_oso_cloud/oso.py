@@ -9,7 +9,7 @@ from sqlalchemy.sql.elements import NamedColumn
 from sqlalchemy.sql.sqltypes import Boolean, Integer, String, TypeEngine
 from tempfile import NamedTemporaryFile
 
-from .orm import _ATTRIBUTE_INFO_KEY, Resource, _RELATION_INFO_KEY
+from .orm import _ATTRIBUTE_INFO_KEY, Resource, _RELATION_INFO_KEY, _REMOTE_RELATION_INFO_KEY
 
 class FactConfig(TypedDict):
   query: str
@@ -36,9 +36,15 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
       if isinstance(attr, RelationshipProperty) and _RELATION_INFO_KEY in attr.info:
         bindings = gen_relation_binding(attr, mapper, id_column)
         facts.update(bindings)
-      elif isinstance(attr, ColumnProperty) and _ATTRIBUTE_INFO_KEY in attr.columns[0].info:
-        bindings = gen_attribute_binding(attr, mapper, id_column)
-        facts.update(bindings)
+      elif isinstance(attr, ColumnProperty):
+        if _ATTRIBUTE_INFO_KEY in attr.columns[0].info:
+          bindings = gen_attribute_binding(attr, mapper, id_column)
+          facts.update(bindings)
+        elif _REMOTE_RELATION_INFO_KEY in attr.columns[0].info:
+          remote_class_name = attr.columns[0].info[_REMOTE_RELATION_INFO_KEY]
+          sql_types[remote_class_name] = str(attr.columns[0].type)
+          bindings = gen_remote_relation_binding(attr, mapper, id_column, remote_class_name)
+          facts.update(bindings)
 
   return {
     "facts": facts,
@@ -76,6 +82,17 @@ def gen_attribute_binding(attribute: ColumnProperty, mapper: Mapper, id_column: 
     }
     
   key = f"has_{attribute.key}({mapper.class_.__name__}:_, {key_type}:_)"
+  return {
+    key: {
+      "query": str(select(id_column, column)),
+    }
+  }
+
+def gen_remote_relation_binding(attribute: ColumnProperty, mapper: Mapper, id_column: NamedColumn, remote_class_name: str) -> dict[str, FactConfig]:
+  if len(attribute.columns) != 1:
+    raise ValueError(f"Oso remote relation {attribute.key} must be a single column")
+  column = attribute.columns[0]
+  key = f"has_relation({mapper.class_.__name__}:_, {remote_class_name.lower()}, {remote_class_name}:_)"
   return {
     key: {
       "query": str(select(id_column, column)),

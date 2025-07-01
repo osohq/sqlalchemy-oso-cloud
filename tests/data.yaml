@@ -7,3 +7,5 @@ facts:
     query: SELECT id, is_public FROM document
   is_public(Document:_):
     query: SELECT id FROM document where is_public = true
+  has_relation(Document:_, team, Team:_):
+    query: SELECT id, team_id FROM document
