@@ -1,6 +1,8 @@
 from oso_cloud import Oso, Value
-from sqlalchemy import text, func
+from sqlalchemy import text, func, ScalarSelect
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.engine import Row
+from typing import cast
 from .models import Document, Base, Organization
 import yaml
 import pytest
@@ -87,7 +89,7 @@ def test_multimodel_authorize_raises_error(oso_session: sqlalchemy_oso_cloud.Ses
       .all()
   )
 
-  first_result = documents_and_organizations[0]
+  first_result = cast(Row[tuple[Document, Organization]], documents_and_organizations[0])
   assert len(first_result) == 2
     
   document, organization = first_result
@@ -134,18 +136,16 @@ def test_authorize_with_relationship_clauses(oso_session: sqlalchemy_oso_cloud.S
   assert len(documents) > 0
 
 def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+  subquery = oso_session.query(Document).filter(Document.is_public == True).with_entities(Document.id).scalar()
   documents = (
       oso_session.query(Document)
       .authorized(alice, "read")
-      .filter(
-          Document.id.in_(
-              oso_session.query(Document.id).filter(Document.is_public == True)
-          )
-      )
+      .filter(Document.id.in_(subquery))
       .all()
   )
   assert len(documents) > 0
   assert all(document.is_public for document in documents)  # All returned documents should be public
 
-  count = oso_session.query(func.count(Document.id)).group_by(Document.status).authorized(alice, "read").all()
-  assert len(count) > 0 
+  count_query: sqlalchemy_oso_cloud.Query = oso_session.query(Document, func.count(Document.id).label('count')).group_by(Document.status).authorized(alice, "read")
+  count_results = count_query.all()
+  assert len(count_results) > 0 
