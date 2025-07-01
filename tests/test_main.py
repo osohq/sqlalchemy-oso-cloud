@@ -17,24 +17,24 @@ def test_manual(oso: Oso, session: Session, alice: Value, bob: Value):
   assert documents[0].id == 2
 
 def test_library(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
-  documents = oso_session.query(Document).authorized_for(alice, "read").all()
+  documents = oso_session.query(Document).authorized(alice, "read").all()
   assert len(documents) == 1
   assert documents[0].id == 1
 
 def test_bob_can_read_different_document(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
-  documents = oso_session.query(Document).authorized_for(bob, "read").all()
+  documents = oso_session.query(Document).authorized(bob, "read").all()
   assert len(documents) == 1
   assert documents[0].id == 2
 
 def test_bob_cannot_eat_documents(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
-  documents = oso_session.query(Document).authorized_for(bob, "eat").all()
+  documents = oso_session.query(Document).authorized(bob, "eat").all()
   assert len(documents) == 0
 
 def test_authorize_with_filter(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
   documents = (
       oso_session.query(Document)
       .filter(Document.id == 1)
-      .authorized_for(alice, "read")
+      .authorized(alice, "read")
       .filter(Document.content == "hello")
       .all()
   )
@@ -45,7 +45,7 @@ def test_authorize_doesnt_bring_in_filtered(oso_session: sqlalchemy_oso_cloud.Se
   documents = (
       oso_session.query(Document)
       .filter(Document.content == "world")
-      .authorized_for(alice, "read")
+      .authorized(alice, "read")
       .all()
   )
   assert len(documents) == 0

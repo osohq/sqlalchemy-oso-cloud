@@ -14,7 +14,7 @@ class Query(sqlalchemy.orm.Query[T]):
       self.oso = get_oso()
       self.filter_cache = {}
 
-  def authorized_for(self, actor: Value, action: str) -> Self:
+  def authorized(self, actor: Value, action: str) -> Self:
     models = self._extract_unique_models()
     options = []
 
@@ -32,12 +32,13 @@ class Query(sqlalchemy.orm.Query[T]):
   
   def _extract_unique_models(self):
     """Extract all models being queried"""
+
     models = set()
     
     for desc in self.column_descriptions:
         if desc['entity'] is not None:
             models.add(desc['entity'])
-            
+
     return models
 
   def _create_auth_criteria_for_model(self, model, actor: Value, action: str):
