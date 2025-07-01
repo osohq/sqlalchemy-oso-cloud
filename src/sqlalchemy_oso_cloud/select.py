@@ -1,6 +1,6 @@
 from sqlalchemy.sql import Select
 from sqlalchemy import select as sqlalchemy_select, text
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, with_loader_criteria
 from oso_cloud import Value
 from typing import Any, Self, Union, Type
 from .oso import get_oso
@@ -26,20 +26,22 @@ class AuthorizedSelect(Select):
     def authorized_for(self, actor: Value, action: str) -> Self:
         """Add authorization filtering to the select statement"""
         models = self._extract_unique_models()
+        options = []
         
-        
-        # Build authorization filters
-        result = self
         for model in models:
-            auth_filter = self._create_auth_filter(model, actor, action)
-            result = result.where(auth_filter)
-        
-        return result
-    
+            auth_criteria = self._create_auth_filter(model, actor, action)
+            options.append(
+                with_loader_criteria(
+                    model,
+                    auth_criteria,
+                    include_aliases=True
+                )
+            )
+        return self.options(*options)
+
     def _create_auth_filter(self, model: Type[DeclarativeBase], actor: Value, action: str):
         """Create authorization filter for a model, with caching"""
         cache_key = f"{model.__name__}:{actor.id}:{action}"
-        print(f"Creating auth filter for {cache_key}")  # Debugging line
         
         if cache_key not in self._auth_cache:
             sql_filter = self._oso.list_local(
@@ -49,11 +51,12 @@ class AuthorizedSelect(Select):
                 column=f"{model.__tablename__}.id"
             )
             
-            # Create subquery for authorized IDs
             auth_subquery = sqlalchemy_select(model.id).where(text(sql_filter))
             self._auth_cache[cache_key] = model.id.in_(auth_subquery)
         
-        return self._auth_cache[cache_key]
+        criteria = self._auth_cache[cache_key]
+
+        return lambda cls: criteria
     
     def _extract_unique_models(self):
         """Extract all models being queried"""
