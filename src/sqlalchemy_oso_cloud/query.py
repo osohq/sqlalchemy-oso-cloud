@@ -42,19 +42,14 @@ class Query(sqlalchemy.orm.Query[T]):
 
 
   def _create_auth_criteria_for_model(self, model, actor: Value, action: str):
-        """Create auth criteria - cache expensive oso.list_local() calls"""
-        cache_key = f"{model.__name__}:{actor.id}:{action}"
+        """Create auth criteria"""
 
-        if cache_key not in self.filter_cache:
-            sql_filter = self.oso.list_local(
-                actor=actor,
-                action=action,
-                resource_type=model.__name__,
-                column=f"{model.__tablename__}.id"
-            )
-            criteria = literal_column(sql_filter)            
-            self.filter_cache[cache_key] = criteria
-        
-        criteria = self.filter_cache[cache_key]
+        sql_filter = self.oso.list_local(
+            actor=actor,
+            action=action,
+            resource_type=model.__name__,
+            column=f"{model.__tablename__}.id"
+        )
+        criteria = literal_column(sql_filter)   
 
         return lambda cls: criteria

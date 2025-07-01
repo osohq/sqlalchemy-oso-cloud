@@ -29,3 +29,23 @@ def test_bob_can_read_different_document(oso_session: sqlalchemy_oso_cloud.Sessi
 def test_bob_cannot_eat_documents(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
   documents = oso_session.query(Document).authorized_for(bob, "eat").all()
   assert len(documents) == 0
+
+def test_authorize_with_filter(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+  documents = (
+      oso_session.query(Document)
+      .filter(Document.id == 1)
+      .authorized_for(alice, "read")
+      .filter(Document.content == "hello")
+      .all()
+  )
+  assert len(documents) == 1
+  assert documents[0].id == 1
+
+def test_authorize_doesnt_bring_in_filtered(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+  documents = (
+      oso_session.query(Document)
+      .filter(Document.content == "world")
+      .authorized_for(alice, "read")
+      .all()
+  )
+  assert len(documents) == 0
