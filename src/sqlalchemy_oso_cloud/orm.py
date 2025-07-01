@@ -50,8 +50,7 @@ def remote_relation(*args, **kwargs) -> MappedColumn:
   2. the name of this relationship, and
   3. the resource that the relationship points to.
 
-  Note: this is not a [`sqlalchemy.orm.relationship`](https://docs.sqlalchemy.org/en/20/orm/relationship_api.html#sqlalchemy.orm.relationship); it does not
-  construct a foreign key.
+  Note: this is not a [`sqlalchemy.orm.relationship`](https://docs.sqlalchemy.org/en/20/orm/relationship_api.html#sqlalchemy.orm.relationship).
 
   Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
   """
