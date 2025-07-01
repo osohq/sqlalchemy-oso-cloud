@@ -80,7 +80,7 @@ def test_multimodel_authorize_raises_error(oso_session: sqlalchemy_oso_cloud.Ses
     _documents = oso_session.query(Document, Organization).authorized(alice, "read")
 
   # multi-model queries still work without authorization
-  # (this is a limitation of the current implementation)
+  # (but not with authorization -- this is a limitation of the current implementation)
   documents_and_organizations = (
       oso_session.query(Document, Organization)
       .join(Organization)
