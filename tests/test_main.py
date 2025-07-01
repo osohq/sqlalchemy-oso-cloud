@@ -1,5 +1,5 @@
 from oso_cloud import Oso, Value
-from sqlalchemy import text, func, ScalarSelect
+from sqlalchemy import text, func
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.engine import Row
 from typing import cast
@@ -136,7 +136,7 @@ def test_authorize_with_relationship_clauses(oso_session: sqlalchemy_oso_cloud.S
   assert len(documents) > 0
 
 def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
-  subquery = oso_session.query(Document).filter(Document.is_public == True).with_entities(Document.id).scalar()
+  subquery = oso_session.query(Document.id).filter(Document.is_public).scalar()  # type: ignore[arg-type]
   documents = (
       oso_session.query(Document)
       .authorized(alice, "read")
