@@ -37,9 +37,8 @@ class Query(sqlalchemy.orm.Query[T]):
     for desc in self.column_descriptions:
         if desc['entity'] is not None:
             models.add(desc['entity'])
+            
     return models
-  
-
 
   def _create_auth_criteria_for_model(self, model, actor: Value, action: str):
         """Create auth criteria"""
