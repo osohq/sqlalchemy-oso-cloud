@@ -22,3 +22,4 @@ class Document(Base, Resource):
   organization: Mapped["Organization"] = relation(back_populates="documents")
   content: Mapped[str]
   status: Mapped[str] = attribute()
+  is_public: Mapped[bool] = attribute(default=False)
