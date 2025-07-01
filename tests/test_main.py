@@ -1,8 +1,9 @@
 from oso_cloud import Oso, Value
-from sqlalchemy import text
-from sqlalchemy.orm import Session
-from .models import Document, Base
+from sqlalchemy import text, func
+from sqlalchemy.orm import Session, joinedload
+from .models import Document, Base, Organization
 import yaml
+import pytest
 
 import sqlalchemy_oso_cloud
 
@@ -63,3 +64,78 @@ def test_authorize_doesnt_bring_in_filtered(oso_session: sqlalchemy_oso_cloud.Se
       .all()
   )
   assert len(documents) == 0
+
+def test_multimodel_authorize_raises_error(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+  with pytest.raises(ValueError):
+    _documents = oso_session.query(Document, Organization).authorized(alice, "read")
+
+  # multi-model queries still work without authorization
+  # (this is a limitation of the current implementation)
+  documents_and_organizations = (
+      oso_session.query(Document, Organization)
+      .join(Organization)
+      .all()
+  )
+
+  first_result = documents_and_organizations[0]
+  assert len(first_result) == 2
+    
+  document, organization = first_result
+  assert isinstance(document, Document)
+  assert isinstance(organization, Organization)
+
+
+def test_common_clauses(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+  documents = (
+      oso_session.query(Document)
+      .authorized(alice, "read")
+      .filter(Document.id == 1)
+      .order_by(Document.id)
+      .limit(10)
+      .all()
+  )
+  assert len(documents) > 0
+
+def test_authorize_with_relationship_clauses(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+  documents = (
+      oso_session.query(Document)
+      .authorized(alice, "read")
+      .join(Organization)
+      .all()
+  )
+  assert len(documents) > 0
+
+  documents = (
+      oso_session.query(Document)
+      .authorized(alice, "read")
+      .options(joinedload(Document.organization))
+      .all()
+  )
+
+  assert len(documents) > 0
+
+  documents = (
+      oso_session.query(Document)
+      .authorized(alice, "read")
+      .join(Organization)
+      .filter(Organization.name == "acme")
+      .all()
+  )
+  assert len(documents) > 0
+
+def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+  documents = (
+      oso_session.query(Document)
+      .authorized(alice, "read")
+      .filter(
+          Document.id.in_(
+              oso_session.query(Document.id).filter(Document.is_public == True)
+          )
+      )
+      .all()
+  )
+  assert len(documents) > 0
+  assert all(document.is_public for document in documents)  # All returned documents should be public
+
+  count = oso_session.query(func.count(Document.id)).group_by(Document.status).authorized(alice, "read").all()
+  assert len(count) > 0 

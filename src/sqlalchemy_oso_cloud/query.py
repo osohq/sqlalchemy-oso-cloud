@@ -29,6 +29,11 @@ class Query(sqlalchemy.orm.Query[T]):
     :return: A new query that includes only the resources that the actor is authorized to perform the action on.
     """
     models = self._extract_unique_models()
+
+    #TODO - handle multiple main models
+    if len(models) > 1:
+        raise ValueError("Querying multiple models is not supported by the authorized method")
+    
     options = []
 
     for model in models:
