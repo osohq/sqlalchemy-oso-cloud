@@ -136,7 +136,7 @@ def test_authorize_with_relationship_clauses(oso_session: sqlalchemy_oso_cloud.S
   assert len(documents) > 0
 
 def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
-  subquery = oso_session.query(Document.id).filter(Document.is_public).scalar()  # type: ignore[arg-type]
+  subquery = oso_session.query(Document.id).filter(Document.is_public).scalar_subquery()  # type: ignore[arg-type]
   documents = (
       oso_session.query(Document)
       .authorized(alice, "read")
@@ -146,6 +146,11 @@ def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Sessi
   assert len(documents) > 0
   assert all(document.is_public for document in documents)  # All returned documents should be public
 
-  count_query: sqlalchemy_oso_cloud.Query = oso_session.query(Document, func.count(Document.id).label('count')).group_by(Document.status).authorized(alice, "read")
+  count_query: sqlalchemy_oso_cloud.Query = oso_session.query(Document.status, func.count(Document.id).label('count')).group_by(Document.status).authorized(alice, "read") # type: ignore[arg-type]
   count_results = count_query.all()
   assert len(count_results) > 0 
+
+def test_authorized_on_column(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+    documents: list[Document] = oso_session.query(Document.id).authorized(alice, "read").all() # type: ignore[arg-type]
+    assert len(documents) > 0
+    assert all(isinstance(doc.id, int) for doc in documents)  
