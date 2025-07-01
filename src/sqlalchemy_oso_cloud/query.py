@@ -1,6 +1,6 @@
 import sqlalchemy.orm
 from sqlalchemy.orm import with_loader_criteria, DeclarativeBase
-from sqlalchemy import text, select
+from sqlalchemy import text, select, literal_column
 from oso_cloud import Value
 from typing import TypeVar, Self
 from .oso import get_oso
@@ -52,10 +52,7 @@ class Query(sqlalchemy.orm.Query[T]):
                 resource_type=model.__name__,
                 column=f"{model.__tablename__}.id"
             )
-            
-            auth_subquery = select(model.id).where(text(sql_filter))
-            criteria = model.id.in_(auth_subquery)
-            
+            criteria = literal_column(sql_filter)            
             self.filter_cache[cache_key] = criteria
         
         criteria = self.filter_cache[cache_key]
