@@ -11,10 +11,9 @@ class AuthorizedSelect(Select):
     inherit_cache = True
     
     def __init__(self, *args, **kwargs):
-        # Handle case where we're wrapping an existing Select
+        # Handle case where we're wrapping an existing Select e.g. AuthorizedSelect(existing_Select)
         if len(args) == 1 and isinstance(args[0], Select):
             select_stmt = args[0]
-            # Copy the select statement's internal state
             super().__init__()
             self.__dict__.update(select_stmt.__dict__)
         else:

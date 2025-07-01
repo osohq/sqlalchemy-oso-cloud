@@ -31,9 +31,27 @@ def test_bob_cannot_eat_documents(oso_session: sqlalchemy_oso_cloud.Session, bob
   documents = oso_session.query(Document).authorized_for(bob, "eat").all()
   assert len(documents) == 0
 
-def test_select(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+def test_select_alice_can_read(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
   statement = select(Document).authorized_for(alice, "read")
-  print(f"Executing statement: {statement}")
   documents = oso_session.execute(statement).scalars().all()
   assert len(documents) == 1
   assert documents[0].id == 1
+
+def test_select_bob_can_read_different_document(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
+  statement = select(Document).authorized_for(bob, "read")
+  documents = oso_session.execute(statement).scalars().all()
+  assert len(documents) == 1
+  assert documents[0].id == 2
+
+def test_select_bob_cannot_eat_document(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
+  statement = select(Document).authorized_for(bob, "eat")
+  documents = oso_session.execute(statement).scalars().all()
+  assert len(documents) == 0
+
+def test_select_without_auth_filter(oso_session: sqlalchemy_oso_cloud.Session):
+  # This should return all documents since we are not filtering by authorization
+  statement = select(Document)
+  documents = oso_session.execute(statement).scalars().all()
+  assert len(documents) == 2
+  assert documents[0].id == 1
+  assert documents[1].id == 2
