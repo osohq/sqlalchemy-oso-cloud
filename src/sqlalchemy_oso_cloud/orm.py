@@ -3,7 +3,7 @@ Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapp
 [authorization data](https://www.osohq.com/docs/authorization-data) in your ORM models.
 """
 
-from sqlalchemy.orm import MappedColumn, mapped_column, relationship
+from sqlalchemy.orm import MappedColumn, Relationship, mapped_column, relationship
 
 class Resource:
   """
@@ -14,9 +14,7 @@ class Resource:
 _RELATION_INFO_KEY = "_oso.relation"
 _ATTRIBUTE_INFO_KEY = "_oso.attribute"
 
-# TODO: should this be on columns or relationships?
-# TODO: types
-def relation(*args, **kwargs):
+def relation(*args, **kwargs) -> Relationship:
   """
   A wrapper around [`sqlalchemy.orm.relationship`](https://docs.sqlalchemy.org/en/20/orm/relationship_api.html#sqlalchemy.orm.relationship)
   that indicates that the relationship corresponds to `has_relation` facts in Oso with the following three arguments:

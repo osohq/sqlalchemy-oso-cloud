@@ -46,11 +46,15 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
   }
 
 def gen_relation_binding(relationship: RelationshipProperty, mapper: Mapper, id_column: NamedColumn) -> dict[str, FactConfig]:
-  if len(relationship.local_columns) != 1:
-    raise ValueError(f"Oso relation {relationship.key} must be to a single column")
-  local_column = list(relationship.local_columns)[0]
-  key = f"has_relation({mapper.class_.__name__}:_, {relationship.key}, {relationship.entity.class_.__name__}:_)"
-  query = select(id_column, local_column)
+  remote = relationship.entity
+  remote_id = remote.get_property("id")
+  if not isinstance(remote_id, ColumnProperty):
+    raise ValueError("Oso relation id must be a column")
+  if len(remote_id.columns) != 1:
+    raise ValueError("Oso relation id must be a single column")
+  remote_id_column = remote_id.columns[0]
+  key = f"has_relation({mapper.class_.__name__}:_, {relationship.key}, {remote.class_.__name__}:_)"
+  query = select(id_column, remote_id_column).where(relationship.primaryjoin)
   return {
     key: {
       "query": str(query),

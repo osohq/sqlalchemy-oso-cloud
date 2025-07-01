@@ -12,7 +12,7 @@ class Organization(Base, Resource):
   __tablename__ = "organization"
   id: Mapped[int] = mapped_column(primary_key=True)
   name: Mapped[str]
-  documents: Mapped[list["Document"]] = relationship(back_populates="organization")
+  documents: Mapped[list["Document"]] = relation(back_populates="organization")
 
 class Document(Base, Resource):
   __tablename__ = "document"
