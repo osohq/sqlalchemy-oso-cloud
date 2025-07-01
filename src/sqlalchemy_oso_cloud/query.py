@@ -1,6 +1,6 @@
 import sqlalchemy.orm
-from sqlalchemy.orm import with_loader_criteria, DeclarativeBase
-from sqlalchemy import text, select, literal_column
+from sqlalchemy.orm import with_loader_criteria
+from sqlalchemy import literal_column, ColumnClause
 from oso_cloud import Value
 from typing import TypeVar
 from .oso import get_oso
@@ -8,7 +8,7 @@ from .oso import get_oso
 T = TypeVar("T")
 Self = TypeVar("Self", bound="Query")
 
-# todo - multiple permissions for multiple main models
+#TODO - multiple permissions for multiple main models
 class Query(sqlalchemy.orm.Query[T]):
   """
   An extension of [`sqlalchemy.orm.Query`](https://docs.sqlalchemy.org/orm/queryguide/query.html#sqlalchemy%2Eorm%2EQuery)
@@ -18,9 +18,8 @@ class Query(sqlalchemy.orm.Query[T]):
   def __init__(self, *args, **kwargs):
       super().__init__(*args, **kwargs)
       self.oso = get_oso()
-      self.filter_cache = {}
 
-  def authorized(self, actor: Value, action: str) -> Self:
+  def authorized(self: Self, actor: Value, action: str) -> Self:
     """
     Filter the query to only include resources that the given actor is authorized to perform the given action on.
 
@@ -64,6 +63,6 @@ class Query(sqlalchemy.orm.Query[T]):
             resource_type=model.__name__,
             column=f"{model.__tablename__}.id"
         )
-        criteria = literal_column(sql_filter)   
+        criteria: ColumnClause = literal_column(sql_filter)   
 
         return lambda cls: criteria
