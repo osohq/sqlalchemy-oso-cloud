@@ -61,3 +61,4 @@ def test_select_without_auth_filter(oso_session: sqlalchemy_oso_cloud.Session):
   assert len(documents) == 2
   assert documents[0].id == 1
   assert documents[1].id == 2
+  

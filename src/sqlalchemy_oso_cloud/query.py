@@ -61,3 +61,4 @@ class Query(sqlalchemy.orm.Query[T]):
         criteria = self.filter_cache[cache_key]
 
         return lambda cls: criteria
+  
