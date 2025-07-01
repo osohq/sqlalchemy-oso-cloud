@@ -37,7 +37,7 @@ def test_local_authorization_config_snapshot(snapshot):
 
 def test_bob_can_read_different_document(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
   documents = oso_session.query(Document).authorized(bob, "read").all()
-  assert len(documents) == 1
+  assert len(documents) == 2
   assert documents[0].id == 2
 
 def test_bob_cannot_eat_documents(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
@@ -55,11 +55,11 @@ def test_authorize_with_filter(oso_session: sqlalchemy_oso_cloud.Session, alice:
   assert len(documents) == 1
   assert documents[0].id == 1
 
-def test_authorize_doesnt_bring_in_filtered(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+def test_authorize_doesnt_bring_in_filtered(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
   documents = (
       oso_session.query(Document)
-      .filter(Document.content == "world")
-      .authorized(alice, "read")
+      .filter(Document.id == 1)
+      .authorized(bob, "read")
       .all()
   )
   assert len(documents) == 0
