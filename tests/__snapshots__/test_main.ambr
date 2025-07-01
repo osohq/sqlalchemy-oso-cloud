@@ -3,7 +3,11 @@
   '''
   facts:
     has_relation(Document:_, organization, Organization:_):
-      query: "SELECT document.id, document.organization_id \nFROM document"
+      query: "SELECT document.id, organization.id AS id_1 \nFROM document, organization\
+        \ \nWHERE organization.id = document.organization_id"
+    has_relation(Organization:_, documents, Document:_):
+      query: "SELECT organization.id, document.id AS id_1 \nFROM organization, document\
+        \ \nWHERE organization.id = document.organization_id"
     has_status(Document:_, String:_):
       query: "SELECT document.id, document.status \nFROM document"
     is_public(Document:_):

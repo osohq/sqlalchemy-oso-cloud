@@ -1,4 +1,4 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import ForeignKey
 from sqlalchemy_oso_cloud.orm import Resource, relation, attribute
 
@@ -12,7 +12,7 @@ class Organization(Base, Resource):
   __tablename__ = "organization"
   id: Mapped[int] = mapped_column(primary_key=True)
   name: Mapped[str]
-  documents: Mapped[list["Document"]] = relationship(back_populates="organization")
+  documents: Mapped[list["Document"]] = relation(back_populates="organization")
 
 class Document(Base, Resource):
   __tablename__ = "document"
