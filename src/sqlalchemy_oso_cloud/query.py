@@ -2,19 +2,33 @@ import sqlalchemy.orm
 from sqlalchemy.orm import with_loader_criteria, DeclarativeBase
 from sqlalchemy import text, select, literal_column
 from oso_cloud import Value
-from typing import TypeVar, Self
+from typing import TypeVar
 from .oso import get_oso
 
 T = TypeVar("T")
+Self = TypeVar("Self", bound="Query")
 
 # todo - multiple permissions for multiple main models
 class Query(sqlalchemy.orm.Query[T]):
+  """
+  An extension of [`sqlalchemy.orm.Query`](https://docs.sqlalchemy.org/orm/queryguide/query.html#sqlalchemy%2Eorm%2EQuery)
+  that adds support for authorization.
+  """
+  
   def __init__(self, *args, **kwargs):
       super().__init__(*args, **kwargs)
       self.oso = get_oso()
       self.filter_cache = {}
 
   def authorized(self, actor: Value, action: str) -> Self:
+    """
+    Filter the query to only include resources that the given actor is authorized to perform the given action on.
+
+    :param actor: The actor performing the action.
+    :param action: The action the actor is performing.
+
+    :return: A new query that includes only the resources that the actor is authorized to perform the action on.
+    """
     models = self._extract_unique_models()
     options = []
 

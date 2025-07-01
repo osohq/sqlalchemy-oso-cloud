@@ -91,21 +91,27 @@ def setup_oso_data(oso: Oso, alice: Value, bob: Value):
 def setup_postgres_data(session: Session):
   org1 = Organization(id=1, name="acme")
   org2 = Organization(id=2, name="bigco")
-  doc1 = Document(id=1, organization=org1, content="hello")
-  doc2 = Document(id=2, organization=org2, content="world")
+  org3 = Organization(id=3, name="cosmo")
+  doc1 = Document(id=1, organization=org1, content="hello", status="draft", is_public=False)
+  doc2 = Document(id=2, organization=org2, content="world", status="published", is_public=False)
+  doc3 = Document(id=3, organization=org3, content="world", status="published", is_public=True)
   session.add(org1)
   session.add(org2)
+  session.add(org3)
   session.add(doc1)
   session.add(doc2)
+  session.add(doc3)
   session.commit()
   yield
   session.delete(org1)
   session.delete(org2)
+  session.delete(org3)
   session.delete(doc1)
   session.delete(doc2)
+  session.delete(doc3)
   session.commit()
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="session")
 def init_sqlalchemy_oso_cloud(oso_url: str, oso_auth: str):
   sqlalchemy_oso_cloud.init(Base.registry, url=oso_url, api_key=oso_auth)
 
