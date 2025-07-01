@@ -59,8 +59,5 @@ class Query(sqlalchemy.orm.Query[T]):
             self.filter_cache[cache_key] = criteria
         
         criteria = self.filter_cache[cache_key]
-        
-        def auth_criteria(cls):
-            return criteria
-        
-        return auth_criteria
+
+        return lambda cls: criteria
