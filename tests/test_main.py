@@ -153,4 +153,4 @@ def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Sessi
 def test_authorized_on_column(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
     documents: list[Document] = oso_session.query(Document.id).authorized(alice, "read").all() # type: ignore[arg-type]
     assert len(documents) > 0
-    assert all(isinstance(doc.id, int) for doc in documents)  
+    assert all(isinstance(doc.id, int) for doc in documents)
