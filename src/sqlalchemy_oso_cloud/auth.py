@@ -1,7 +1,7 @@
 from sqlalchemy.orm import with_loader_criteria
 from sqlalchemy import literal_column, ColumnClause
 from oso_cloud import Value
-from typing import Set, Type, Any, Callable
+from typing import Set, Type, Callable
 from .oso import get_oso
 
 
