@@ -42,7 +42,7 @@ def attribute(*args, **kwargs) -> MappedColumn:
   col.column.info[_ATTRIBUTE_INFO_KEY] = None
   return col
 
-def remote_relation(*args, **kwargs) -> MappedColumn:
+def remote_relation(remote_resource_name: str, remote_relation_key: str | None = None, *args, **kwargs) -> MappedColumn:
   """
   A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
   that indicates that the attribute corresponds to `has_relation` facts (to a resource not defined in the local database) in Oso with the following two arguments:
@@ -57,14 +57,6 @@ def remote_relation(*args, **kwargs) -> MappedColumn:
   - `remote_resource_name`: the name of the remote resource
   - `remote_relation_key` (optional): the name of the relation on the remote resource. If not provided, the name of the relation will be inferred from the name of the column.
   """
-  REMOTE_RESOURCE_NAME = "remote_resource_name"
-  REMOTE_RELATION_KEY = "remote_relation_key"
-  remote_relation_key = None
-  if REMOTE_RESOURCE_NAME not in kwargs:
-    raise ValueError(f"{REMOTE_RESOURCE_NAME} is required")
-  if REMOTE_RELATION_KEY in kwargs:
-    remote_relation_key = kwargs.pop(REMOTE_RELATION_KEY)
-  remote_resource_name = kwargs.pop(REMOTE_RESOURCE_NAME)
   col = mapped_column(*args, **kwargs)
   col.column.info[_REMOTE_RELATION_INFO_KEY] = (remote_resource_name, remote_relation_key)
   return col
