@@ -2,7 +2,6 @@
 Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapping_styles.html#orm-declarative-mapping)
 [authorization data](https://www.osohq.com/docs/authorization-data) in your ORM models.
 """
-import inspect
 from typing import Callable, Any, TypeVar, ParamSpec
 from functools import wraps
 
