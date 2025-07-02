@@ -4,6 +4,7 @@ from sqlalchemy import text, select
 from oso_cloud import Value
 from typing import TypeVar, Self
 from .oso import get_oso
+from .auth import _apply_authorization_options
 
 T = TypeVar("T")
 
@@ -14,21 +15,8 @@ class Query(sqlalchemy.orm.Query[T]):
       self.oso = get_oso()
       self.filter_cache = {}
 
-  def authorized_for(self, actor: Value, action: str) -> Self:
-    models = self._extract_unique_models()
-    options = []
-
-    for model in models:
-        auth_criteria = self._create_auth_criteria_for_model(model, actor, action)
-        options.append(
-            with_loader_criteria(
-                model, 
-                auth_criteria,
-                include_aliases=True
-            )
-        )
-
-    return self.options(*options)
+  def authorized(self, actor: Value, action: str) -> Self:
+    return _apply_authorization_options(self, actor, action)
   
   def _extract_unique_models(self):
     """Extract all models being queried"""

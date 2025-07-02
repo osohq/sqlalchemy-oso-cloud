@@ -4,6 +4,7 @@ from sqlalchemy.orm import DeclarativeBase, with_loader_criteria
 from oso_cloud import Value
 from typing import  TypeVar, Type
 from .oso import get_oso
+from .auth import _apply_authorization_options
 
 Self = TypeVar("Self", bound="AuthorizedSelect")
 
@@ -22,47 +23,12 @@ class AuthorizedSelect(Select):
             super().__init__(*args, **kwargs)
         
         self._oso = get_oso()
-        self._auth_cache = {}
     
-    def authorized_for(self: Self, actor: Value, action: str) -> Self:
+    def authorized(self: Self, actor: Value, action: str) -> Self:
         """Add authorization filtering to the select statement"""
-        models = self._extract_unique_models()
-        options = []
-        
-        for model in models:
-            auth_criteria = self._create_auth_filter(model, actor, action)
-            options.append(
-                with_loader_criteria(
-                    model,
-                    auth_criteria,
-                    include_aliases=True
-                )
-            )
-        return self.options(*options)
+        return _apply_authorization_options(self, actor, action)
     
-    def _extract_unique_models(self):
-        """Extract all models being queried"""
-        models = set()
-        
-        for desc in self.column_descriptions:
-            if desc['entity'] is not None:
-                models.add(desc['entity'])
-        return models
-
-    def _create_auth_filter(self, model: Type[DeclarativeBase], actor: Value, action: str):
-        """Create authorization filter for a model"""
-        
-        sql_filter = self._oso.list_local(
-            actor=actor,
-            action=action,
-            resource_type=model.__name__,
-            column=f"{model.__tablename__}.id"
-        )
-        
-        criteria: ColumnClause = literal_column(sql_filter)
-
-        return lambda cls: criteria
-
+    
 def select(*args, **kwargs) -> AuthorizedSelect:
     """
     Create an AuthorizedSelect statement
