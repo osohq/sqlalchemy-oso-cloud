@@ -41,9 +41,9 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
           bindings = gen_attribute_binding(attr, mapper, id_column)
           facts.update(bindings)
         elif _REMOTE_RELATION_INFO_KEY in attr.columns[0].info:
-          remote_class_name = attr.columns[0].info[_REMOTE_RELATION_INFO_KEY]
-          sql_types[remote_class_name] = str(attr.columns[0].type)
-          bindings = gen_remote_relation_binding(attr, mapper, id_column, remote_class_name)
+          remote_resource_name, remote_relation_key = attr.columns[0].info[_REMOTE_RELATION_INFO_KEY]
+          sql_types[remote_resource_name] = str(attr.columns[0].type)
+          bindings = gen_remote_relation_binding(attr, mapper, id_column, remote_resource_name, remote_relation_key)
           facts.update(bindings)
 
   return {
@@ -88,11 +88,13 @@ def gen_attribute_binding(attribute: ColumnProperty, mapper: Mapper, id_column: 
     }
   }
 
-def gen_remote_relation_binding(attribute: ColumnProperty, mapper: Mapper, id_column: NamedColumn, remote_class_name: str) -> dict[str, FactConfig]:
+def gen_remote_relation_binding(attribute: ColumnProperty, mapper: Mapper, id_column: NamedColumn, remote_resource_name: str, remote_relation_key: str | None) -> dict[str, FactConfig]:
   if len(attribute.columns) != 1:
     raise ValueError(f"Oso remote relation {attribute.key} must be a single column")
   column = attribute.columns[0]
-  key = f"has_relation({mapper.class_.__name__}:_, {remote_class_name.lower()}, {remote_class_name}:_)"
+  if remote_relation_key is None:
+    remote_relation_key = column.name.removesuffix("_id")
+  key = f"has_relation({mapper.class_.__name__}:_, {remote_relation_key}, {remote_resource_name}:_)"
   return {
     key: {
       "query": str(select(id_column, column)),

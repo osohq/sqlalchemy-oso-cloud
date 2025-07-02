@@ -53,10 +53,18 @@ def remote_relation(*args, **kwargs) -> MappedColumn:
   Note: this is not a [`sqlalchemy.orm.relationship`](https://docs.sqlalchemy.org/en/20/orm/relationship_api.html#sqlalchemy.orm.relationship).
 
   Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
+  Also accepts the following additional arguments:
+  - `remote_resource_name`: the name of the remote resource
+  - `remote_relation_key` (optional): the name of the relation on the remote resource. If not provided, the name of the relation will be inferred from the name of the column.
   """
-  if "remote_class_name" not in kwargs:
-    raise ValueError("remote_class_name is required")
-  remote_class_name = kwargs.pop("remote_class_name")
+  REMOTE_RESOURCE_NAME = "remote_resource_name"
+  REMOTE_RELATION_KEY = "remote_relation_key"
+  remote_relation_key = None
+  if REMOTE_RESOURCE_NAME not in kwargs:
+    raise ValueError(f"{REMOTE_RESOURCE_NAME} is required")
+  if REMOTE_RELATION_KEY in kwargs:
+    remote_relation_key = kwargs.pop(REMOTE_RELATION_KEY)
+  remote_resource_name = kwargs.pop(REMOTE_RESOURCE_NAME)
   col = mapped_column(*args, **kwargs)
-  col.column.info[_REMOTE_RELATION_INFO_KEY] = remote_class_name
+  col.column.info[_REMOTE_RELATION_INFO_KEY] = (remote_resource_name, remote_relation_key)
   return col

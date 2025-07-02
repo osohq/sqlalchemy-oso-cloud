@@ -16,7 +16,7 @@ class Document(Base, Resource):
   id: Mapped[int] = mapped_column(primary_key=True)
   organization_id: Mapped[int] = mapped_column(ForeignKey("organization.id"))
   organization: Mapped["Organization"] = relation(back_populates="documents")
-  team_id: Mapped[int] = remote_relation(remote_class_name="Team")
+  team_id: Mapped[int] = remote_relation(remote_resource_name="Team")
   content: Mapped[str]
   status: Mapped[str] = attribute()
   is_public: Mapped[bool] = attribute(default=False)
