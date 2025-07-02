@@ -55,8 +55,8 @@ def remote_relation(remote_resource_name: str, remote_relation_key: Union[str, N
 
   Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
   Also accepts the following additional arguments:
-  - `remote_resource_name`: the name of the remote resource
-  - `remote_relation_key` (optional): the name of the relation on the remote resource. If not provided, the name of the relation will be inferred from the name of the column.
+  :param remote_resource_name: the name of the remote resource
+  :param remote_relation_key: (optional) the name of the relation on the remote resource. If not provided, the name of the relation will be inferred from the name of the column.
   """
   col = mapped_column(*args, **kwargs)
   col.column.info[_REMOTE_RELATION_INFO_KEY] = (remote_resource_name, remote_relation_key)
