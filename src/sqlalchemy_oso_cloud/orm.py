@@ -2,7 +2,9 @@
 Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapping_styles.html#orm-declarative-mapping)
 [authorization data](https://www.osohq.com/docs/authorization-data) in your ORM models.
 """
-from typing import Callable, Any
+import inspect
+
+from typing import Callable, Any, Optional, Dict
 from typing_extensions import ParamSpec, TypeVar
 from functools import wraps
 
@@ -31,7 +33,57 @@ def wrap(func: Callable[P, Any]) -> Callable[[Callable[P, T]], Callable[P, T]]:
         return wrapped
     return decorator
 
-@wrap(relationship)
+F = TypeVar('F', bound=Callable[..., Any])
+
+def wrap_with_signature(
+    wrapped_func: Callable,
+    extra_params: Optional[Dict[str, Dict[str, Any]]] = None
+):
+    """
+    Decorator that copies signature from wrapped_func and optionally adds extra parameters.
+    
+    Args:
+        wrapped_func: The function whose signature to copy
+        extra_params: Dict of {param_name: {'annotation': type, 'default': value}}
+    """
+    def decorator(wrapper_func: F) -> F:
+        # Get the original signature
+        sig = inspect.signature(wrapped_func)
+        params = list(sig.parameters.values())
+        
+        # Add extra parameters as keyword-only
+        if extra_params:
+            for name, info in extra_params.items():
+                param = inspect.Parameter(
+                    name,
+                    inspect.Parameter.KEYWORD_ONLY,
+                    default=info.get('default', inspect.Parameter.empty),
+                    annotation=info.get('annotation', inspect.Parameter.empty)
+                )
+                params.append(param)
+        
+        # Create new signature
+        new_sig = sig.replace(parameters=params)
+        
+        # Apply to wrapper function
+        wrapper_func.__signature__ = new_sig
+        wrapper_func.__annotations__ = getattr(wrapped_func, '__annotations__', {})
+        
+        # Add extra param annotations
+        if extra_params:
+            for name, info in extra_params.items():
+                if 'annotation' in info:
+                    wrapper_func.__annotations__[name] = info['annotation']
+        
+        wrapper_func.__name__ = wrapped_func.__name__
+        wrapper_func.__doc__ = wrapped_func.__doc__
+        wrapper_func.__module__ = wrapped_func.__module__
+        
+        return wrapper_func
+    
+    return decorator
+
+@wrap_with_signature(relationship)
 def relation(*args, **kwargs) -> Relationship:
   """
   A wrapper around [`sqlalchemy.orm.relationship`](https://docs.sqlalchemy.org/en/20/orm/relationship_api.html#sqlalchemy.orm.relationship)
