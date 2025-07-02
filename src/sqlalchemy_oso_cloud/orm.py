@@ -22,12 +22,7 @@ P = ParamSpec('P')
 T = TypeVar('T')
 
 def wrap(func: Callable[P, Any]) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    """Wrap a SQLAlchemy function in a type-safe way.
-    
-    Args:
-        func: The original SQLAlchemy function to wrap
-        custom_params: Optional dict of custom parameters to add to the signature
-    """
+    """Wrap a SQLAlchemy function in a type-safe way."""
     def decorator(wrapper: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
         def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
