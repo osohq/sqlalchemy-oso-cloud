@@ -1,7 +1,7 @@
 import os
 import yaml
 
-from typing import TypedDict, Optional
+from typing import TypedDict, Optional, Union
 from oso_cloud import Oso
 from sqlalchemy import select
 from sqlalchemy.orm import Mapper, RelationshipProperty, registry, ColumnProperty
@@ -88,7 +88,7 @@ def gen_attribute_binding(attribute: ColumnProperty, mapper: Mapper, id_column: 
     }
   }
 
-def gen_remote_relation_binding(attribute: ColumnProperty, mapper: Mapper, id_column: NamedColumn, remote_resource_name: str, remote_relation_key: str | None) -> dict[str, FactConfig]:
+def gen_remote_relation_binding(attribute: ColumnProperty, mapper: Mapper, id_column: NamedColumn, remote_resource_name: str, remote_relation_key: Union[str, None]) -> dict[str, FactConfig]:
   if len(attribute.columns) != 1:
     raise ValueError(f"Oso remote relation {attribute.key} must be a single column")
   column = attribute.columns[0]
