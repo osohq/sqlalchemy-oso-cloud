@@ -52,6 +52,11 @@ def authorized(actor: Value, action: str, *models: Type) -> list:
     :param models: The model classes to authorize against
     :return: List of loader criteria options for use with .options()
     """
+    
+    if len(models) > 1:
+        raise ValueError("Currently only single model authorization is supported.")
+    if len(models) == 0:
+        raise ValueError("Must provide a model to authorize against.")
 
     options = []
     for model in models:
