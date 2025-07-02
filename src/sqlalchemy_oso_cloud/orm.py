@@ -2,7 +2,8 @@
 Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapping_styles.html#orm-declarative-mapping)
 [authorization data](https://www.osohq.com/docs/authorization-data) in your ORM models.
 """
-from typing import Callable, Any, TypeVar, ParamSpec
+from typing import Callable, Any
+from typing_extensions import ParamSpec, TypeVar
 from functools import wraps
 
 from sqlalchemy.orm import MappedColumn, Relationship, mapped_column, relationship
