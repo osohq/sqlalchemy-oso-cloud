@@ -8,7 +8,6 @@ from typing_extensions import ParamSpec, TypeVar, Concatenate
 from functools import wraps
 
 from sqlalchemy.orm import MappedColumn, Relationship, mapped_column, relationship
-from typing import Union
 
 class Resource:
   """
@@ -41,7 +40,7 @@ def _add_params(wrapped_func: Callable[P, R]) -> Callable[[_WithExtraKwargs[P, R
   """Adds extra keyword parameters to `remote_relation` in order to support static type checking."""
   def decorator(wrapper: Callable[Concatenate[str, Optional[str], P], R]) -> _WithExtraKwargs[P, R]:
     @wraps(wrapped_func)
-    def wrapped(remote_resource_name: str, remote_relation_key: Union[str, None] = None, *args: P.args, **kwargs: P.kwargs) -> R:
+    def wrapped(remote_resource_name: str, remote_relation_key: Optional[str] = None, *args: P.args, **kwargs: P.kwargs) -> R:
       return wrapper(remote_resource_name, remote_relation_key, *args, **kwargs)
     return wrapped
   return decorator
