@@ -2,6 +2,9 @@
 Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapping_styles.html#orm-declarative-mapping)
 [authorization data](https://www.osohq.com/docs/authorization-data) in your ORM models.
 """
+import inspect
+from typing import Callable, Any, TypeVar, ParamSpec
+from functools import wraps
 
 from sqlalchemy.orm import MappedColumn, Relationship, mapped_column, relationship
 from typing import Union
@@ -16,6 +19,24 @@ _RELATION_INFO_KEY = "_oso.relation"
 _ATTRIBUTE_INFO_KEY = "_oso.attribute"
 _REMOTE_RELATION_INFO_KEY = "_oso.remote_relation"
 
+P = ParamSpec('P')
+T = TypeVar('T')
+
+def wrap(func: Callable[P, Any]) -> Callable[[Callable[P, T]], Callable[P, T]]:
+    """Wrap a SQLAlchemy function in a type-safe way.
+    
+    Args:
+        func: The original SQLAlchemy function to wrap
+        custom_params: Optional dict of custom parameters to add to the signature
+    """
+    def decorator(wrapper: Callable[P, T]) -> Callable[P, T]:
+        @wraps(func)
+        def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
+            return wrapper(*args, **kwargs)
+        return wrapped
+    return decorator
+
+@wrap(relationship)
 def relation(*args, **kwargs) -> Relationship:
   """
   A wrapper around [`sqlalchemy.orm.relationship`](https://docs.sqlalchemy.org/en/20/orm/relationship_api.html#sqlalchemy.orm.relationship)
@@ -30,6 +51,7 @@ def relation(*args, **kwargs) -> Relationship:
   rel.info[_RELATION_INFO_KEY] = None
   return rel
 
+@wrap(mapped_column)
 def attribute(*args, **kwargs) -> MappedColumn:
   """
   A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
