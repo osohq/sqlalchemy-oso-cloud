@@ -4,6 +4,7 @@ Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapp
 """
 
 from sqlalchemy.orm import MappedColumn, Relationship, mapped_column, relationship
+from typing import Union
 
 class Resource:
   """
@@ -42,7 +43,7 @@ def attribute(*args, **kwargs) -> MappedColumn:
   col.column.info[_ATTRIBUTE_INFO_KEY] = None
   return col
 
-def remote_relation(remote_resource_name: str, remote_relation_key: str | None = None, *args, **kwargs) -> MappedColumn:
+def remote_relation(remote_resource_name: str, remote_relation_key: Union[str, None] = None, *args, **kwargs) -> MappedColumn:
   """
   A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
   that indicates that the attribute corresponds to `has_relation` facts (to a resource not defined in the local database) in Oso with the following two arguments:
