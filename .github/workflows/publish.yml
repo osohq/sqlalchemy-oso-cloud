@@ -16,4 +16,5 @@ jobs:
         with:
           python-version: 3.9
       - uses: abatilo/actions-poetry@v3
-      - run: poetry publish --build
+      - run: poetry build
+      - uses: pypa/gh-action-pypi-publish@release/v1
