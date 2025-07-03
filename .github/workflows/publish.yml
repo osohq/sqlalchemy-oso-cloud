@@ -16,12 +16,15 @@ jobs:
           python-version: 3.9
       - uses: abatilo/actions-poetry@v3
       - run: poetry build
+      - name: Ensure changelog entry exists
+        run: grep $(poetry version -s) CHANGELOG.md
       - id: version
-        run: echo "version=$(poetry version -s)" >> $GITHUB_OUTPUT
-      - run: echo ${{ steps.version.outputs }}
+        run: echo "v=$(poetry version -s)" >> $GITHUB_OUTPUT
+      - id: version_fragment
+        run: echo "v=$(poetry version -s | sed 's/\.//g')" >> $GITHUB_OUTPUT
       - uses: actions/create-release@v1
         with:
-          tag_name: v${{ steps.version.outputs }}
-          release_name: v${{ steps.version.outputs }}
-          body: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.version.outputs }}
+          tag_name: v${{ steps.version.outputs.v }}
+          release_name: v${{ steps.version.outputs.v }}
+          body: "[Changelog entry](${{ github.server_url }}/${{ github.repository }}/blob/main/CHANGELOG.md#v${{ steps.version_fragment.outputs.v }})"
       - uses: pypa/gh-action-pypi-publish@release/v1
