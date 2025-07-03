@@ -17,7 +17,7 @@ jobs:
       - uses: abatilo/actions-poetry@v3
       - run: poetry build
       - id: version
-        run: poetry version -s >> $GITHUB_OUTPUT
+        run: echo "version=$(poetry version -s)" >> $GITHUB_OUTPUT
       - run: echo ${{ steps.version.outputs }}
       - uses: actions/create-release@v1
         with:
