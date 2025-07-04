@@ -68,7 +68,11 @@ class Session(sqlalchemy.orm.Session):
       """
       Returns a SQLAlchemy query extended to support authorization.
 
-      Single entity queries which return Query[T].
+      Returns a SQLAlchemy query extended to support authorization.
+      Accepts all of the same arguments as
+      [`sqlalchemy.orm.Session.query`](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy%2Eorm%2ESession%2Equery).
+    
+      Single entity queries return Query[T].
       Multi-entity and column queries return Query[Row[Tuple[...]]].
       All other queries types return Query[Any].
       """
