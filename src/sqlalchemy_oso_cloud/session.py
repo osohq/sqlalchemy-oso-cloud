@@ -27,7 +27,7 @@ class Session(sqlalchemy.orm.Session):
     Initialize a SQLAlchemy session with the `.Query` class extended to support authorization.
     Accepts all of the same arguments as [`sqlalchemy.orm.Session`](https://docs.sqlalchemy.org/orm/session_api.html#sqlalchemy%2Eorm%2ESession),
     except for `query_cls`.
-      """
+    """
     if "query_cls" in kwargs:
       raise ValueError("sqlalchemy_oso_cloud does not currently support combining with other query classes")
     super().__init__(*args, **{ **kwargs, "query_cls": Query })
