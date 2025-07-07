@@ -1,10 +1,13 @@
 import sqlalchemy.orm
 from oso_cloud import Value
-from typing import TypeVar, Self
-from .oso import get_oso
+from typing import TypeVar
+
 from .auth import _apply_authorization_options
+from .orm import Resource
+from .oso import get_oso
 
 T = TypeVar("T")
+Self = TypeVar("Self", bound="Query")
 
 # todo - multiple permissions for multiple main models
 class Query(sqlalchemy.orm.Query[T]):

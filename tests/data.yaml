@@ -1,3 +1,11 @@
 facts:
   has_relation(Document:_, organization, Organization:_):
     query: SELECT id, organization_id FROM document
+  has_status(Document:_, String:_):
+    query: SELECT id, status FROM document
+  is_public(Document:_, Boolean:_):
+    query: SELECT id, is_public FROM document
+  is_public(Document:_):
+    query: SELECT id FROM document where is_public = true
+  has_relation(Document:_, team, Team:_):
+    query: SELECT id, team_id FROM document
