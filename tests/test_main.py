@@ -134,7 +134,7 @@ def test_authorize_with_relationship_clauses(oso_session: sqlalchemy_oso_cloud.S
   assert len(documents) > 0
 
 def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
-  subquery = oso_session.query(Document.id).filter(Document.is_public).scalar_subquery()  # type: ignore[arg-type]
+  subquery = oso_session.query(Document.id).filter(Document.is_public).scalar_subquery()
   documents = (
       oso_session.query(Document)
       .authorized(alice, "read")
@@ -149,6 +149,6 @@ def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Sessi
   assert len(count_results) > 0 
 
 def test_authorized_on_column(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
-    documents = oso_session.query(Document.id).authorized(alice, "read").all() # type: ignore[arg-type]
+    documents = oso_session.query(Document.id).authorized(alice, "read").all() 
     assert len(documents) > 0
     assert all(isinstance(doc.id, int) for doc in documents)
