@@ -29,10 +29,12 @@ import sqlalchemy_oso_cloud as oso
 
 class Document(Base, oso.Resource):
     ...
-    # TODO(iris): decide on this API
-    organization: relation(remote="Organization")
+    # maps facts like `has_relation(Document{"123"}, "organization", Organization{"acme"})`
+    organization_id: oso.remote_relation(remote_resource_name="Organization")
     # maps facts like `has_state(Document{"123"}, "published")`
     state: Mapped[str] = oso.attribute()
+    # maps facts like `is_public(Document{"123"})`
+    is_public: Mapped[bool] = oso.attribute()
 
 class DocumentChunk(Base, oso.Resource):
     ...
@@ -64,6 +66,7 @@ resource Document {
     "read" if
         "member" on "organization" and
         has_state(resource, "published");
+    "read" if is_public(resource);
 
     "write" if "author";
 }
@@ -95,6 +98,7 @@ def authorized_rag_retrieval(user, embedding):
 
 # Reference
 
+- [Documentation](https://www.osohq.com/docs/app-integration/client-apis/python/sqlalchemy)
 - [API Reference](https://osohq.github.io/sqlalchemy-oso-cloud)
 - [Oso Cloud](https://www.osohq.com/docs)
   - [Polar](https://www.osohq.com/docs/modeling-in-polar)
@@ -109,8 +113,8 @@ hang out! It's a great place to ask questions, share feedback, and get advice.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md)
+See the [Contributing Guide](https://github.com/osohq/sqlalchemy-oso-cloud/blob/main/CONTRIBUTING.md)
 
 ## License
 
-[Apache 2.0](LICENSE)
+[Apache 2.0](https://github.com/osohq/sqlalchemy-oso-cloud/blob/main/LICENSE)
