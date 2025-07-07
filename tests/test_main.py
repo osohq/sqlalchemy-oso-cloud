@@ -149,6 +149,10 @@ def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Sessi
   assert len(count_results) > 0 
 
 def test_authorized_on_column(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
-    documents = oso_session.query(Document.id).authorized(alice, "read").all() 
-    assert len(documents) > 0
-    assert all(isinstance(doc.id, int) for doc in documents)
+  documents = oso_session.query(Document.id).authorized(alice, "read").all() 
+  assert len(documents) > 0
+  assert all(isinstance(doc.id, int) for doc in documents)
+
+def test_typing(session: Session, oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+  x = session.query(Organization.name, Document.is_public, Document)
+  y = oso_session.query(Organization.name, Document.is_public, Document)

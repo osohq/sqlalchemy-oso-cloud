@@ -2,7 +2,7 @@ import sqlalchemy.orm
 from .query import Query
 from sqlalchemy.engine import Row
 from sqlalchemy.orm.attributes import InstrumentedAttribute
-from typing import Type, TypeVar, overload, Any, Tuple
+from typing import Type, TypeVar, overload, Any, Tuple, Union
 
 T = TypeVar("T")
 T1 = TypeVar("T1")
@@ -40,25 +40,27 @@ class Session(sqlalchemy.orm.Session):
   @overload
   def query(self, column: InstrumentedAttribute[T], /) -> Query[Row[Tuple[T]]]: ...
 
-  # Two entities overload
+   # Two arguments - any combination of entities/columns
   @overload
-  def query(self, entity1: Type[T1], entity2: Type[T2], /) -> Query[Row[Tuple[T1, T2]]]: ...
+  def query(self, 
+           arg1: Union[Type[T1], InstrumentedAttribute[T1]], 
+           arg2: Union[Type[T2], InstrumentedAttribute[T2]], /) -> Query[Row[Tuple[T1, T2]]]: ...
 
-  # Two columns overload
+  # Three arguments - any combination of entities/columns
   @overload
-  def query(self, col1: InstrumentedAttribute[T1], col2: InstrumentedAttribute[T2], /) -> Query[Row[Tuple[T1, T2]]]: ...
+  def query(self, 
+           arg1: Union[Type[T1], InstrumentedAttribute[T1]], 
+           arg2: Union[Type[T2], InstrumentedAttribute[T2]], 
+           arg3: Union[Type[T3], InstrumentedAttribute[T3]], /) -> Query[Row[Tuple[T1, T2, T3]]]: ...
 
-  # Mixed: entity + column
+  # Four arguments - any combination of entities/columns
   @overload
-  def query(self, entity: Type[T1], column: InstrumentedAttribute[T2], /) -> Query[Row[Tuple[T1, T2]]]: ...
+  def query(self, 
+           arg1: Union[Type[T1], InstrumentedAttribute[T1]], 
+           arg2: Union[Type[T2], InstrumentedAttribute[T2]], 
+           arg3: Union[Type[T3], InstrumentedAttribute[T3]], 
+           arg4: Union[Type[T4], InstrumentedAttribute[T4]], /) -> Query[Row[Tuple[T1, T2, T3, T4]]]: ...
 
-  # Three entities overload
-  @overload
-  def query(self, entity1: Type[T1], entity2: Type[T2], entity3: Type[T3], /) -> Query[Row[Tuple[T1, T2, T3]]]: ...
-
-  # Four entities overload
-  @overload
-  def query(self, entity1: Type[T1], entity2: Type[T2], entity3: Type[T3], entity4: Type[T4], /) -> Query[Row[Tuple[T1, T2, T3, T4]]]: ...
 
   # Fallback overload
   @overload
