@@ -20,6 +20,12 @@ def test_manual(oso: Oso, session: Session, alice: Value, bob: Value):
   assert len(documents) == 2
   assert any(document.id == 2 for document in documents)
   assert any(document.id == 3 for document in documents) # bob can see this because it is "public"
+  filter = oso.list_local(alice, "write", "Document", "document.id")
+  documents = session.query(Document).filter(text(filter)).all()
+  assert len(documents) == 2
+  filter = oso.list_local(bob, "write", "Document", "document.id")
+  documents = session.query(Document).filter(text(filter)).all()
+  assert len(documents) == 1
 
 def test_library(oso_session: sqlalchemy_oso_cloud.Session, alice: Value, bob: Value):
   documents = oso_session.query(Document).authorized(alice, "read").all()
@@ -35,6 +41,12 @@ def test_library(oso_session: sqlalchemy_oso_cloud.Session, alice: Value, bob: V
 def test_local_authorization_config_snapshot(snapshot):
   config = sqlalchemy_oso_cloud.oso.generate_local_authorization_config(Base.registry)
   snapshot.assert_match(yaml.dump(config))
+
+def test_alice_and_bob_write(oso_session: sqlalchemy_oso_cloud.Session, alice: Value, bob: Value):
+  documents = oso_session.query(Document).authorized(alice, "write").all()
+  assert len(documents) == 2
+  documents = oso_session.query(Document).authorized(bob, "write").all()
+  assert len(documents) == 1
 
 def test_bob_can_read_different_document(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
   documents = oso_session.query(Document).authorized(bob, "read").all()

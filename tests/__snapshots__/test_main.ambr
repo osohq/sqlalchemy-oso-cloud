@@ -5,6 +5,8 @@
     has_relation(Document:_, organization, Organization:_):
       query: "SELECT document.id, organization.id AS id_1 \nFROM document, organization\
         \ \nWHERE organization.id = document.organization_id"
+    has_relation(Document:_, team, Team:_):
+      query: "SELECT document.id, document.team_id \nFROM document"
     has_relation(Organization:_, documents, Document:_):
       query: "SELECT organization.id, document.id AS id_1 \nFROM organization, document\
         \ \nWHERE organization.id = document.organization_id"
@@ -15,6 +17,7 @@
   sql_types:
     Document: INTEGER
     Organization: INTEGER
+    Team: INTEGER
   
   '''
 # ---
