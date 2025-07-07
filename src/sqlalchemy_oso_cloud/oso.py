@@ -131,7 +131,7 @@ def init(registry: registry, **kwargs):
   if "url" not in kwargs:
     kwargs["url"] = os.getenv("OSO_URL", "https://api.osohq.com")
   if "api_key" not in kwargs:
-    kwargs["api_key"] = os.getenv("OSO_API_KEY")
+    kwargs["api_key"] = os.getenv("OSO_AUTH")
   if "data_bindings" in kwargs:
     # just need to conditionally close/delete the temporary file if it was created
     raise NotImplementedError("manual data_bindings are not supported yet")

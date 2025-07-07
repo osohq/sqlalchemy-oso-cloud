@@ -42,4 +42,4 @@ respectively.
 
 We use [pdoc](https://pdoc.dev/) to generate the
 [API reference documentation](https://osohq.github.io/sqlalchemy-oso-cloud/).
-Use `poetry run pdoc` to preview it locally.
+Use `poetry run pdoc sqlalchemy_oso_cloud` to preview it locally.
