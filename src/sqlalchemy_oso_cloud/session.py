@@ -1,8 +1,14 @@
 import sqlalchemy.orm
 from .query import Query
-from typing import Type, TypeVar
+from sqlalchemy.engine import Row
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+from typing import Type, TypeVar, overload, Any, Tuple, Union
 
 T = TypeVar("T")
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
+T3 = TypeVar("T3")
+T4 = TypeVar("T4")
 
 class Session(sqlalchemy.orm.Session):
   """
@@ -26,11 +32,50 @@ class Session(sqlalchemy.orm.Session):
       raise ValueError("sqlalchemy_oso_cloud does not currently support combining with other query classes")
     super().__init__(*args, **{ **kwargs, "query_cls": Query })
 
-  # TODO(connor): arguments/types to support original query method
-  def query(self, entity: Type[T], *args, **kwargs) -> Query[T]:  # type: ignore
-    """
-    Returns a SQLAlchemy query extended to support authorization.
-    Accepts all of the same arguments as
-    [`sqlalchemy.orm.Session.query`](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy%2Eorm%2ESession%2Equery).
-    """
-    return super().query(entity, *args, **kwargs)
+  # Single entity overload
+  @overload # type: ignore[override]
+  def query(self, entity: Type[T], /) -> Query[T]: ...
+
+  # Single column overload
+  @overload
+  def query(self, column: InstrumentedAttribute[T], /) -> Query[Row[Tuple[T]]]: ...
+
+   # Two arguments - any combination of entities/columns
+  @overload
+  def query(self, 
+           arg1: Union[Type[T1], InstrumentedAttribute[T1]], 
+           arg2: Union[Type[T2], InstrumentedAttribute[T2]], /) -> Query[Row[Tuple[T1, T2]]]: ...
+
+  # Three arguments - any combination of entities/columns
+  @overload
+  def query(self, 
+           arg1: Union[Type[T1], InstrumentedAttribute[T1]], 
+           arg2: Union[Type[T2], InstrumentedAttribute[T2]], 
+           arg3: Union[Type[T3], InstrumentedAttribute[T3]], /) -> Query[Row[Tuple[T1, T2, T3]]]: ...
+
+  # Four arguments - any combination of entities/columns
+  @overload
+  def query(self, 
+           arg1: Union[Type[T1], InstrumentedAttribute[T1]], 
+           arg2: Union[Type[T2], InstrumentedAttribute[T2]], 
+           arg3: Union[Type[T3], InstrumentedAttribute[T3]], 
+           arg4: Union[Type[T4], InstrumentedAttribute[T4]], /) -> Query[Row[Tuple[T1, T2, T3, T4]]]: ...
+
+
+  # Fallback overload
+  @overload
+  def query(self, *entities: Any) -> Query[Any]: ...
+
+  def query(self, *entities, **kwargs) -> Query[Any]:
+      """
+      Returns a SQLAlchemy query extended to support authorization.
+
+      Returns a SQLAlchemy query extended to support authorization.
+      Accepts all of the same arguments as
+      [`sqlalchemy.orm.Session.query`](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy%2Eorm%2ESession%2Equery).
+    
+      Single entity queries return Query[T].
+      Multi-entity and column queries return Query[Row[Tuple[...]]].
+      All other queries types return Query[Any].
+      """
+      return super().query(*entities, **kwargs)

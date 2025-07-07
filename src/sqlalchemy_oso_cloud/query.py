@@ -4,6 +4,7 @@ from sqlalchemy import literal_column, ColumnClause
 from oso_cloud import Value
 from typing import TypeVar
 from .oso import get_oso
+from .orm import Resource
 
 T = TypeVar("T")
 Self = TypeVar("Self", bound="Query")
@@ -29,9 +30,16 @@ class Query(sqlalchemy.orm.Query[T]):
     :return: A new query that includes only the resources that the actor is authorized to perform the action on.
     """
     models = self._extract_unique_models()
+
+    #TODO - handle multiple main models
+    if len(models) > 1:
+        raise ValueError("Querying multiple models is not supported by the authorized method")
+    
     options = []
 
     for model in models:
+        if not issubclass(model, Resource):
+            continue
         auth_criteria = self._create_auth_criteria_for_model(model, actor, action)
         options.append(
             with_loader_criteria(
