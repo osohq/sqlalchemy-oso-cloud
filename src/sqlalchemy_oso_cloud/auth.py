@@ -2,6 +2,7 @@ from sqlalchemy.orm import with_loader_criteria
 from sqlalchemy import literal_column, ColumnClause
 from oso_cloud import Value
 from typing import Set, Type, Callable
+from .orm import Resource
 from .oso import get_oso
 
 
@@ -60,6 +61,8 @@ def authorized(actor: Value, action: str, *models: Type) -> list:
 
     options = []
     for model in models:
+        if not issubclass(model, Resource):
+            continue
         auth_criteria = create_auth_criteria_for_model(model, actor, action)
         options.append(
             with_loader_criteria(
