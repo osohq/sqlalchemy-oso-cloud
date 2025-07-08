@@ -1,3 +1,3 @@
-# v0.1.0b1
+# v0.1.0
 
-- Pre-release
+- Initial release
