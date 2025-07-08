@@ -3,8 +3,10 @@ Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapp
 [authorization data](https://www.osohq.com/docs/authorization-data) in your ORM models.
 """
 
+from typing import Callable, Optional, Protocol, Any
+from typing_extensions import ParamSpec, TypeVar, Concatenate
+
 from sqlalchemy.orm import MappedColumn, Relationship, mapped_column, relationship
-from typing import Union
 
 class Resource:
   """
@@ -16,6 +18,31 @@ _RELATION_INFO_KEY = "_oso.relation"
 _ATTRIBUTE_INFO_KEY = "_oso.attribute"
 _REMOTE_RELATION_INFO_KEY = "_oso.remote_relation"
 
+P = ParamSpec('P')
+T = TypeVar('T')
+R = TypeVar('R', covariant=True)
+
+def _wrap(func: Callable[P, Any]) -> Callable[[Callable[P, T]], Callable[P, T]]:
+    """Wrap a SQLAlchemy function in a type-safe way."""
+    def decorator(wrapper: Callable[P, T]) -> Callable[P, T]:
+      def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
+          return wrapper(*args, **kwargs)
+      return wrapped
+    return decorator
+
+class _WithExtraKwargs(Protocol[P, R]):
+    def __call__(self, remote_resource_name: str, remote_relation_key: Optional[str] = None, *args: P.args, **kwargs: P.kwargs) -> R:
+        ...
+
+def _add_params(wrapped_func: Callable[P, R]) -> Callable[[_WithExtraKwargs[P, R]], _WithExtraKwargs[P, R]]:
+  """Adds extra keyword parameters to `remote_relation` in order to support static type checking."""
+  def decorator(wrapper: Callable[Concatenate[str, Optional[str], P], R]) -> _WithExtraKwargs[P, R]:
+    def wrapped(remote_resource_name: str, remote_relation_key: Optional[str] = None, *args: P.args, **kwargs: P.kwargs) -> R:
+      return wrapper(remote_resource_name, remote_relation_key, *args, **kwargs)
+    return wrapped
+  return decorator
+
+@_wrap(relationship)
 def relation(*args, **kwargs) -> Relationship:
   """
   A wrapper around [`sqlalchemy.orm.relationship`](https://docs.sqlalchemy.org/en/20/orm/relationship_api.html#sqlalchemy.orm.relationship)
@@ -30,6 +57,7 @@ def relation(*args, **kwargs) -> Relationship:
   rel.info[_RELATION_INFO_KEY] = None
   return rel
 
+@_wrap(mapped_column)
 def attribute(*args, **kwargs) -> MappedColumn:
   """
   A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
@@ -43,7 +71,8 @@ def attribute(*args, **kwargs) -> MappedColumn:
   col.column.info[_ATTRIBUTE_INFO_KEY] = None
   return col
 
-def remote_relation(remote_resource_name: str, remote_relation_key: Union[str, None] = None, *args, **kwargs) -> MappedColumn:
+@_add_params(mapped_column)
+def remote_relation(remote_resource_name: str, remote_relation_key: Optional[str] = None, *args, **kwargs) -> MappedColumn:
   """
   A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
   that indicates that the attribute corresponds to `has_relation` facts (to a resource not defined in the local database) in Oso with the following two arguments:
