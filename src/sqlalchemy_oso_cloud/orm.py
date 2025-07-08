@@ -26,7 +26,6 @@ R = TypeVar('R', covariant=True)
 def _wrap(func: Callable[P, Any]) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Wrap a SQLAlchemy function in a type-safe way."""
     def decorator(wrapper: Callable[P, T]) -> Callable[P, T]:
-      @wraps(func)
       def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
           return wrapper(*args, **kwargs)
       return wrapped
@@ -39,7 +38,6 @@ class _WithExtraKwargs(Protocol[P, R]):
 def _add_params(wrapped_func: Callable[P, R]) -> Callable[[_WithExtraKwargs[P, R]], _WithExtraKwargs[P, R]]:
   """Adds extra keyword parameters to `remote_relation` in order to support static type checking."""
   def decorator(wrapper: Callable[Concatenate[str, Optional[str], P], R]) -> _WithExtraKwargs[P, R]:
-    @wraps(wrapped_func)
     def wrapped(remote_resource_name: str, remote_relation_key: Optional[str] = None, *args: P.args, **kwargs: P.kwargs) -> R:
       return wrapper(remote_resource_name, remote_relation_key, *args, **kwargs)
     return wrapped
