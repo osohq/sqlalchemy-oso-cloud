@@ -20,8 +20,8 @@ pip install sqlalchemy-oso-cloud
 
 ### Step 1: Map SQLAlchemy Data
 
-With the utilities in [sqlalchemy_oso_cloud.orm], bind
-data in your SQLAlchemy models to the Oso facts you'll use
+With the utilities in [`sqlalchemy_oso_cloud.orm`](https://osohq.github.io/sqlalchemy-oso-cloud/sqlalchemy_oso_cloud/orm.html),
+bind data in your SQLAlchemy models to the Oso facts you'll use
 in your authorization policy.
 
 ```python
@@ -83,9 +83,12 @@ resource DocumentChunk {
 
 ### Step 3: Profit
 
+Use the `.authorized` method to filter based on your authorization policy.
+
 ```python
 from .models import Base, DocumentChunk
 import sqlalchemy_oso_cloud
+from sqlalchemy_oso_cloud import select
 
 sqlalchemy_oso_cloud.init(Base.registry)
 
