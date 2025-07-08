@@ -8,8 +8,9 @@ Self = TypeVar("Self", bound="Select")
 class Select(sqlalchemy.sql.Select):
     """A Select subclass that adds authorization functionality"""
 
-    #: :meta private:
     inherit_cache = True
+    """Internal SQLAlchemy caching optimization"""
+    
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
