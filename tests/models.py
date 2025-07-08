@@ -1,7 +1,8 @@
-from pgvector.sqlalchemy import Vector
+from pgvector.sqlalchemy import Vector # type: ignore
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import ForeignKey
 from sqlalchemy_oso_cloud.orm import Resource, relation, attribute, remote_relation
+from typing import Optional
 
 class Base(DeclarativeBase):
   pass
@@ -21,4 +22,4 @@ class Document(Base, Resource):
   content: Mapped[str]
   status: Mapped[str] = attribute()
   is_public: Mapped[bool] = attribute(default=False)
-  embedding: Mapped[list[float]] = mapped_column(Vector(3), nullable=True)
+  embedding: Mapped[Optional[list[float]]] = mapped_column(Vector(3), nullable=True)

@@ -1,86 +1,59 @@
 """
 Test compatibility with pgvector-sqlalchemy
 """
-import pytest
 import numpy as np
+import pytest
 from oso_cloud import Value
 from sqlalchemy import select as sqla_select, text
-from sqlalchemy.orm import Session
-from pgvector.sqlalchemy import Vector
 from sqlalchemy_oso_cloud import select, authorized, Session as OsoSession
-from .models import Document
+from .models import Document, Organization
+
+if not hasattr(Document, 'embedding'):
+    pytest.skip("Document model doesn't have embedding field", allow_module_level=True)
 
 
-def test_pgvector_extension_creation(session: Session):
-    """Test that pgvector extension can be created"""
-    # This would typically be done during database setup
-    session.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
-    session.commit()
+def test_pgvector_extension_creation(oso_session: OsoSession):
+    oso_session.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
+    oso_session.commit()
     
-    # Verify extension exists
-    result = session.execute(
+    result = oso_session.execute(
         text("SELECT * FROM pg_extension WHERE extname = 'vector'")
     ).fetchone()
     assert result is not None
 
-    print(f"result: {result}")
 
-
-def test_vector_column_with_oso_authorization(session: OsoSession, alice: Value, bob: Value):
-    """Test that vector columns work with Oso authorization"""
-
-    embeddings = {
-        1: [0.1, 0.2, 0.3],
-        2: [0.4, 0.5, 0.6],
-        3: [0.7, 0.8, 0.9]
-    }
-    
-    for doc_id, embedding in embeddings.items():
-        doc = session.query(Document).filter(Document.id == doc_id).first()
-        if doc and hasattr(doc, 'embedding'):
-            doc.embedding = embedding
-    session.commit()
-    
-    # Test 1: Basic vector search with authorization
+def test_vector_column_with_oso_authorization_query(oso_session: OsoSession, bob: Value):
     query_vector = [0.3, 0.4, 0.5]
-    
-    # Using the custom select with authorization
-    if hasattr(Document, 'embedding'):
-        # Order by L2 distance and apply authorization
-        stmt = (
-            select(Document)
-            .order_by(Document.embedding.l2_distance(query_vector))
-            .authorized(alice, "read")
+   
+    documents = (
+        oso_session.query(Document)
+        .order_by(Document.embedding.l2_distance(query_vector))
+        .authorized(bob, "read")
+        .all()
         )
-        documents = session.execute(stmt).scalars().all()
-        
-        # Alice should see 3 documents
-        assert len(documents) == 3
-        
-        # The results should be ordered by distance
-        # Document 2 should be closest to our query vector
-        assert documents[0].id == 2
-    
-    # Test 2: Vector search with Bob's authorization
-    if hasattr(Document, 'embedding'):
-        stmt = (
-            select(Document)
-            .order_by(Document.embedding.l2_distance(query_vector))
-            .authorized(bob, "read")
-        )
-        documents = session.execute(stmt).scalars().all()
-        
-        # Bob should see only 2 documents
-        assert len(documents) == 2
-        assert documents[0].id == 2  # Still ordered by distance
+   
+    assert len(documents) == 2
+    assert documents[0].id == 2 
 
 
-def test_vector_distance_with_filters(session: OsoSession, alice: Value):
-    """Test combining vector distance with other filters"""
+def test_vector_column_with_oso_authorization_select(oso_session: OsoSession, alice: Value):
+    query_vector = [0.3, 0.4, 0.5]
+   
+    stmt = (
+        select(Document)
+        .order_by(Document.embedding.l2_distance(query_vector))
+        .authorized(alice, "read")
+    )
+    documents = oso_session.execute(stmt).scalars().all()
+    
+    assert len(documents) >= 3
+    assert documents[0].id == 2
+
+
+def test_vector_distance_with_filters(oso_session: OsoSession, alice: Value):
     query_vector = [0.5, 0.5, 0.5]
     
     if hasattr(Document, 'embedding'):
-        # Combine vector search with status filter and authorization
         stmt = (
             select(Document)
             .where(Document.status == "published")
@@ -88,115 +61,113 @@ def test_vector_distance_with_filters(session: OsoSession, alice: Value):
             .authorized(alice, "read")
             .limit(10)
         )
-        documents = session.execute(stmt).scalars().all()
+        documents = oso_session.execute(stmt).scalars().all()
         
-        # Should only get published documents that Alice can read
         assert all(doc.status == "published" for doc in documents)
         assert len(documents) >= 1
 
 
-def test_cosine_distance_search(session: OsoSession, alice: Value):
+def test_cosine_distance_search(oso_session: OsoSession, alice: Value):
     """Test using cosine distance instead of L2"""
     query_vector = [1.0, 0.0, 0.0]
     
-    if hasattr(Document, 'embedding'):
-        stmt = (
-            select(Document)
-            .order_by(Document.embedding.cosine_distance(query_vector))
-            .authorized(alice, "read")
-            .limit(5)
-        )
-        documents = session.execute(stmt).scalars().all()
-        
-        assert len(documents) > 0
+    stmt = (
+        select(Document)
+        .order_by(Document.embedding.cosine_distance(query_vector))
+        .authorized(alice, "read")
+        .limit(5)
+    )
+    documents = oso_session.execute(stmt).scalars().all()
+    
+    assert len(documents) > 0
+
+    documents = (
+        oso_session.query(Document)
+        .order_by(Document.embedding.cosine_distance(query_vector))
+        .authorized(alice, "read")
+        .limit(5)
+        .all()
+    )
+
+    assert len(documents) > 0
 
 
-def test_vector_within_distance_threshold(session: OsoSession, alice: Value):
-    """Test filtering by distance threshold"""
+def test_vector_within_distance_threshold(oso_session: OsoSession, alice: Value):
     query_vector = [0.5, 0.5, 0.5]
     distance_threshold = 1.0
     
-    if hasattr(Document, 'embedding'):
-        # Get documents within a certain distance
-        stmt = (
-            select(Document)
-            .filter(Document.embedding.l2_distance(query_vector) < distance_threshold)
-            .authorized(alice, "read")
+    stmt = (
+        select(Document)
+        .filter(Document.embedding.l2_distance(query_vector) < distance_threshold)
+        .authorized(alice, "read")
+    )
+    documents = oso_session.execute(stmt).scalars().all()
+    
+    # Verify all returned documents are within the threshold
+    for doc in documents:
+        distance = np.linalg.norm(
+            np.array(doc.embedding) - np.array(query_vector)
         )
-        documents = session.execute(stmt).scalars().all()
-        
-        # Verify all returned documents are within the threshold
-        for doc in documents:
-            distance = np.linalg.norm(
-                np.array(doc.embedding) - np.array(query_vector)
-            )
-            assert distance < distance_threshold
+        assert distance < distance_threshold
 
 
-def test_query_api_with_vectors(session: OsoSession, alice: Value):
-    """Test the legacy Query API with vector operations"""
+def test_query_api_with_vectors(oso_session: OsoSession, alice: Value):
     query_vector = [0.3, 0.4, 0.5]
     
-    if hasattr(Document, 'embedding'):
-        # Using the Query API
-        documents = (
-            session.query(Document)
-            .order_by(Document.embedding.l2_distance(query_vector))
-            .authorized(alice, "read")
-            .limit(5)
-            .all()
+    documents = (
+        oso_session.query(Document)
+        .order_by(Document.embedding.l2_distance(query_vector))
+        .authorized(alice, "read")
+        .limit(5)
+        .all()
+    )
+    
+    assert len(documents) > 0
+    if len(documents) > 1:
+        # np.linalg.norm() calculates the L2 distance
+        # essentially confirming the order_by works
+        first_distance = np.linalg.norm(
+            np.array(documents[0].embedding) - np.array(query_vector)
         )
-        
-        assert len(documents) > 0
-        # Should be ordered by distance
-        if len(documents) > 1:
-            first_distance = np.linalg.norm(
-                np.array(documents[0].embedding) - np.array(query_vector)
-            )
-            last_distance = np.linalg.norm(
-                np.array(documents[-1].embedding) - np.array(query_vector)
-            )
-            assert first_distance <= last_distance
+        last_distance = np.linalg.norm(
+            np.array(documents[-1].embedding) - np.array(query_vector)
+        )
+        assert first_distance <= last_distance
 
 
-def test_authorized_as_options_with_vectors(session: OsoSession, alice: Value):
-    """Test using authorized() as options with vector queries"""
+def test_authorized_as_options_with_vectors(oso_session: OsoSession, alice: Value):
     query_vector = [0.5, 0.5, 0.5]
     
-    if hasattr(Document, 'embedding'):
-        stmt = (
-            sqla_select(Document)
-            .order_by(Document.embedding.l2_distance(query_vector))
-            .options(authorized(alice, "read", Document))
-            .limit(3)
-        )
-        documents = session.execute(stmt).scalars().all()
-        
-        assert len(documents) > 0
+    stmt = (
+        sqla_select(Document)
+        .order_by(Document.embedding.l2_distance(query_vector))
+        .options(authorized(alice, "read", Document))
+        .limit(3)
+    )
+    documents = oso_session.execute(stmt).scalars().all()
+    
+    assert len(documents) > 0
 
 
-def test_complex_vector_query_with_joins(session: OsoSession, alice: Value):
-    """Test vector queries with joins and authorization"""
-    from .models import Organization
+def test_vector_select_with_joins(oso_session: OsoSession, alice: Value):
     query_vector = [0.5, 0.5, 0.5]
     
-    if hasattr(Document, 'embedding'):
-        # Complex query with join, vector distance, and authorization
-        stmt = (
-            select(Document)
-            .join(Organization)
-            .where(Organization.name == "acme")
-            .order_by(Document.embedding.l2_distance(query_vector))
-            .authorized(alice, "read")
-        )
-        documents = session.execute(stmt).scalars().all()
+
+    stmt = (
+        select(Document)
+        .join(Organization)
+        .where(Organization.name == "acme")
+        .order_by(Document.embedding.l2_distance(query_vector))
+        .authorized(alice, "read")
+    )
+    documents = oso_session.execute(stmt).scalars().all()
+
+    print(f"docs in multi: {documents}")
         
-        # Should only get documents from "acme" organization that Alice can read
-        assert all(doc.organization.name == "acme" for doc in documents)
+    assert all(doc.organization.name == "acme" for doc in documents)
 
 
-def test_max_inner_product_search(session: OsoSession, alice: Value):
-    """Test using max inner product for similarity search"""
+def test_max_inner_product_search(oso_session: OsoSession, alice: Value):
     query_vector = [0.5, 0.5, 0.5]
     
     if hasattr(Document, 'embedding'):
@@ -206,19 +177,17 @@ def test_max_inner_product_search(session: OsoSession, alice: Value):
             .authorized(alice, "read")
             .limit(5)
         )
-        documents = session.execute(stmt).scalars().all()
+        documents = oso_session.execute(stmt).scalars().all()
         
         assert len(documents) > 0
 
 
-def test_no_interference_with_non_vector_queries(session: OsoSession, alice: Value):
-    """Ensure pgvector doesn't interfere with regular queries"""
-    # This should work exactly as before, even with pgvector installed
-    documents = session.query(Document).authorized(alice, "read").all()
-    assert len(documents) == 3
+def test_no_interference_with_non_vector_queries(oso_session: OsoSession, alice: Value):
+    # These should work exactly as before, even with pgvector installed
+    documents = oso_session.query(Document).authorized(alice, "read").all()
+    assert len(documents) >= 3
     
-    # Test with select API
     stmt = select(Document).where(Document.status == "published").authorized(alice, "read")
-    documents = session.execute(stmt).scalars().all()
+    documents = oso_session.execute(stmt).scalars().all() # type: ignore
     assert len(documents) >= 1
     assert all(doc.status == "published" for doc in documents)

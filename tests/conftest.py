@@ -136,6 +136,6 @@ def init_sqlalchemy_oso_cloud(oso_url: str, oso_auth: str):
   sqlalchemy_oso_cloud.init(Base.registry, url=oso_url, api_key=oso_auth)
 
 @pytest.fixture
-def session(engine: Engine):
+def oso_session(engine: Engine):
   with sqlalchemy_oso_cloud.Session(engine) as session:
     yield session
