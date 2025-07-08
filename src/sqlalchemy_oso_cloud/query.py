@@ -1,10 +1,9 @@
 import sqlalchemy.orm
-from sqlalchemy.orm import with_loader_criteria
-from sqlalchemy import literal_column, ColumnClause
 from oso_cloud import Value
-from typing import TypeVar
+from typing import Type, TypeVar, Optional
+
+from .auth import _apply_authorization_options
 from .oso import get_oso
-from .orm import Resource
 
 T = TypeVar("T")
 Self = TypeVar("Self", bound="Query")
@@ -20,7 +19,7 @@ class Query(sqlalchemy.orm.Query[T]):
       super().__init__(*args, **kwargs)
       self.oso = get_oso()
 
-  def authorized(self: Self, actor: Value, action: str) -> Self:
+  def authorized(self: Self, actor: Value, action: str, model: Optional[Type] = None ) -> Self:
     """
     Filter the query to only include resources that the given actor is authorized to perform the given action on.
 
@@ -29,48 +28,5 @@ class Query(sqlalchemy.orm.Query[T]):
 
     :return: A new query that includes only the resources that the actor is authorized to perform the action on.
     """
-    models = self._extract_unique_models()
-
-    #TODO - handle multiple main models
-    if len(models) > 1:
-        raise ValueError("Querying multiple models is not supported by the authorized method")
-    
-    options = []
-
-    for model in models:
-        if not issubclass(model, Resource):
-            continue
-        auth_criteria = self._create_auth_criteria_for_model(model, actor, action)
-        options.append(
-            with_loader_criteria(
-                model, 
-                auth_criteria,
-                include_aliases=True
-            )
-        )
-
-    return self.options(*options)
+    return _apply_authorization_options(self, actor, action, model)
   
-  def _extract_unique_models(self):
-    """Extract all models being queried"""
-
-    models = set()
-    
-    for desc in self.column_descriptions:
-        if desc['entity'] is not None:
-            models.add(desc['entity'])
-
-    return models
-
-  def _create_auth_criteria_for_model(self, model, actor: Value, action: str):
-        """Create auth criteria"""
-
-        sql_filter = self.oso.list_local(
-            actor=actor,
-            action=action,
-            resource_type=model.__name__,
-            column=f"{model.__tablename__}.id"
-        )
-        criteria: ColumnClause = literal_column(sql_filter)   
-
-        return lambda cls: criteria
