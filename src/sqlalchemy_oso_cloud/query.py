@@ -1,12 +1,9 @@
 import sqlalchemy.orm
-from sqlalchemy.orm import with_loader_criteria, Mapper
-from sqlalchemy import text, inspect, select, literal_column, ColumnClause
 from oso_cloud import Value
 from typing import Type, TypeVar, Optional
 
 from .auth import _apply_authorization_options
 from .oso import get_oso
-from .orm import Resource
 
 T = TypeVar("T")
 Self = TypeVar("Self", bound="Query")
