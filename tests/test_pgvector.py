@@ -53,18 +53,17 @@ def test_vector_column_with_oso_authorization_select(oso_session: OsoSession, al
 def test_vector_distance_with_filters(oso_session: OsoSession, alice: Value):
     query_vector = [0.5, 0.5, 0.5]
     
-    if hasattr(Document, 'embedding'):
-        stmt = (
-            select(Document)
-            .where(Document.status == "published")
-            .order_by(Document.embedding.l2_distance(query_vector))
-            .authorized(alice, "read")
-            .limit(10)
-        )
-        documents = oso_session.execute(stmt).scalars().all()
-        
-        assert all(doc.status == "published" for doc in documents)
-        assert len(documents) >= 1
+    stmt = (
+        select(Document)
+        .where(Document.status == "published")
+        .order_by(Document.embedding.l2_distance(query_vector))
+        .authorized(alice, "read")
+        .limit(10)
+    )
+    documents = oso_session.execute(stmt).scalars().all()
+    
+    assert all(doc.status == "published" for doc in documents)
+    assert len(documents) >= 1
 
 
 def test_cosine_distance_search(oso_session: OsoSession, alice: Value):
