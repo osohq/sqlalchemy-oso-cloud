@@ -5,6 +5,8 @@ from typing import Set, Type, Callable
 from .orm import Resource
 from .oso import get_oso
 
+__all__ = ['authorized', '_apply_authorization_options']
+
 
 def extract_unique_models(column_descriptions) -> Set[Type]:
     """Extract all models being queried from column descriptions"""
