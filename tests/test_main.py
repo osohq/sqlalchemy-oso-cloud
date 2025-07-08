@@ -28,13 +28,13 @@ def test_manual(oso: Oso, session: Session, alice: Value, bob: Value):
   documents = session.query(Document).filter(text(filter)).all()
   assert len(documents) == 1
 
-def test_library(oso_session: sqlalchemy_oso_cloud.Session, alice: Value, bob: Value):
-  documents = oso_session.query(Document).authorized(alice, "read").all()
+def test_library(session: sqlalchemy_oso_cloud.Session, alice: Value, bob: Value):
+  documents = session.query(Document).authorized(alice, "read").all()
   assert len(documents) == 3
   assert any(document.id == 1 for document in documents)
   assert any(document.id == 2 for document in documents) # alice can see this because it is "published"
   assert any(document.id == 3 for document in documents) # alice can see this because it is "public"
-  documents = oso_session.query(Document).authorized(bob, "read").all()
+  documents = session.query(Document).authorized(bob, "read").all()
   assert len(documents) == 2
   assert any(document.id == 2 for document in documents)
   assert any(document.id == 3 for document in documents) # bob can see this because it is "public"
@@ -43,48 +43,48 @@ def test_local_authorization_config_snapshot(snapshot):
   config = sqlalchemy_oso_cloud.oso.generate_local_authorization_config(Base.registry)
   snapshot.assert_match(yaml.dump(config))
 
-def test_alice_and_bob_write(oso_session: sqlalchemy_oso_cloud.Session, alice: Value, bob: Value):
-  documents = oso_session.query(Document).authorized(alice, "write").all()
+def test_alice_and_bob_write(session: sqlalchemy_oso_cloud.Session, alice: Value, bob: Value):
+  documents = session.query(Document).authorized(alice, "write").all()
   assert len(documents) == 2
-  documents = oso_session.query(Document).authorized(bob, "write").all()
+  documents = session.query(Document).authorized(bob, "write").all()
   assert len(documents) == 1
 
-def test_bob_can_read_different_document(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
-  documents = oso_session.query(Document).authorized(bob, "read").all()
+def test_bob_can_read_different_document(session: sqlalchemy_oso_cloud.Session, bob: Value):
+  documents = session.query(Document).authorized(bob, "read").all()
   assert len(documents) == 2
   assert documents[0].id == 2
 
-def test_bob_cannot_eat_documents(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
-  documents = oso_session.query(Document).authorized(bob, "eat").all()
+def test_bob_cannot_eat_documents(session: sqlalchemy_oso_cloud.Session, bob: Value):
+  documents = session.query(Document).authorized(bob, "eat").all()
   assert len(documents) == 0
 
-def test_select_alice_can_read(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+def test_select_alice_can_read(session: sqlalchemy_oso_cloud.Session, alice: Value):
   statement = select(Document).authorized(alice, "read")
-  documents = oso_session.execute(statement).scalars().all()
+  documents = session.execute(statement).scalars().all()
   assert len(documents) > 1
   assert documents[0].id == 1
 
-def test_select_bob_can_read_different_document(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
+def test_select_bob_can_read_different_document(session: sqlalchemy_oso_cloud.Session, bob: Value):
   statement = select(Document).authorized(bob, "read")
-  documents = oso_session.execute(statement).scalars().all()
+  documents = session.execute(statement).scalars().all()
   assert len(documents) > 1
   assert documents[0].id == 2
 
-def test_select_bob_cannot_eat_document(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
+def test_select_bob_cannot_eat_document(session: sqlalchemy_oso_cloud.Session, bob: Value):
   statement = select(Document).authorized(bob, "eat")
-  documents = oso_session.execute(statement).scalars().all()
+  documents = session.execute(statement).scalars().all()
   assert len(documents) == 0
 
-def test_select_select_with_where(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
+def test_select_select_with_where(session: sqlalchemy_oso_cloud.Session, bob: Value):
   statement = select(Document).where(Document.id == 2).authorized(bob, "read").where(Document.content == "world")
-  documents = oso_session.execute(statement).scalars().all()
+  documents = session.execute(statement).scalars().all()
   assert len(documents) == 1
   assert documents[0].id == 2
 
-def test_select_without_auth_filter(oso_session: sqlalchemy_oso_cloud.Session):
+def test_select_without_auth_filter(session: sqlalchemy_oso_cloud.Session):
   # This should return all documents since we are not filtering by authorization
   statement = select(Document)
-  documents = oso_session.execute(statement).scalars().all()
+  documents = session.execute(statement).scalars().all()
   assert len(documents) > 2
   assert documents[0].id == 1
   assert documents[1].id == 2
@@ -94,9 +94,9 @@ def test_authorized_as_options(session, alice: Value):
   documents = session.execute(statement).scalars().all()
   assert len(documents) > 0
 
-def test_authorize_with_filter(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+def test_authorize_with_filter(session: sqlalchemy_oso_cloud.Session, alice: Value):
   documents = (
-      oso_session.query(Document)
+      session.query(Document)
       .filter(Document.id == 1)
       .authorized(alice, "read")
       .filter(Document.content == "hello")
@@ -105,9 +105,9 @@ def test_authorize_with_filter(oso_session: sqlalchemy_oso_cloud.Session, alice:
   assert len(documents) == 1
   assert documents[0].id == 1
 
-def test_authorize_doesnt_bring_in_filtered(oso_session: sqlalchemy_oso_cloud.Session, bob: Value):
+def test_authorize_doesnt_bring_in_filtered(session: sqlalchemy_oso_cloud.Session, bob: Value):
   documents = (
-      oso_session.query(Document)
+      session.query(Document)
       .filter(Document.id == 1)
       .authorized(bob, "read")
       .all()
@@ -115,18 +115,18 @@ def test_authorize_doesnt_bring_in_filtered(oso_session: sqlalchemy_oso_cloud.Se
   assert len(documents) == 0
 
 # In current implementation: chaining .authorized produces an AND intersection of the results
-def test_authorize_chaining(oso_session: sqlalchemy_oso_cloud.Session, alice: Value, bob: Value):
+def test_authorize_chaining(session: sqlalchemy_oso_cloud.Session, alice: Value, bob: Value):
   documents = (
-      oso_session.query(Document)
+      session.query(Document)
       .authorized(alice, "read")
       .authorized(bob, "read")
       .all()
   )
   assert len(documents) > 1
 
-def test_multimodel_authorize(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+def test_multimodel_authorize(session: sqlalchemy_oso_cloud.Session, alice: Value):
   documents = (
-    oso_session.query(Document, Organization)
+    session.query(Document, Organization)
     .join(Organization)
     .authorized(alice, "read")
     .all()
@@ -137,7 +137,7 @@ def test_multimodel_authorize(oso_session: sqlalchemy_oso_cloud.Session, alice: 
 
   # multi-model queries still work without authorization
   documents_and_organizations = (
-      oso_session.query(Document, Organization)
+      session.query(Document, Organization)
       .join(Organization)
       .all()
   )
@@ -150,9 +150,9 @@ def test_multimodel_authorize(oso_session: sqlalchemy_oso_cloud.Session, alice: 
   assert isinstance(organization, Organization)
 
 
-def test_common_clauses(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+def test_common_clauses(session: sqlalchemy_oso_cloud.Session, alice: Value):
   documents = (
-      oso_session.query(Document)
+      session.query(Document)
       .authorized(alice, "read")
       .filter(Document.id == 1)
       .order_by(Document.id)
@@ -161,9 +161,9 @@ def test_common_clauses(oso_session: sqlalchemy_oso_cloud.Session, alice: Value)
   )
   assert len(documents) > 0
 
-def test_authorize_with_relationship_clauses(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
+def test_authorize_with_relationship_clauses(session: sqlalchemy_oso_cloud.Session, alice: Value):
   documents = (
-      oso_session.query(Document)
+      session.query(Document)
       .authorized(alice, "read")
       .join(Organization)
       .all()
@@ -171,7 +171,7 @@ def test_authorize_with_relationship_clauses(oso_session: sqlalchemy_oso_cloud.S
   assert len(documents) > 0
 
   documents = (
-      oso_session.query(Document)
+      session.query(Document)
       .authorized(alice, "read")
       .options(joinedload(Document.organization))
       .all()
@@ -180,7 +180,7 @@ def test_authorize_with_relationship_clauses(oso_session: sqlalchemy_oso_cloud.S
   assert len(documents) > 0
 
   documents = (
-      oso_session.query(Document)
+      session.query(Document)
       .authorized(alice, "read")
       .join(Organization)
       .filter(Organization.name == "acme")
@@ -188,10 +188,10 @@ def test_authorize_with_relationship_clauses(oso_session: sqlalchemy_oso_cloud.S
   )
   assert len(documents) > 0
 
-def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
-  subquery = oso_session.query(Document.id).filter(Document.is_public).scalar_subquery()
+def test_authorized_with_complex_queries(session: sqlalchemy_oso_cloud.Session, alice: Value):
+  subquery = session.query(Document.id).filter(Document.is_public).scalar_subquery()
   documents = (
-      oso_session.query(Document)
+      session.query(Document)
       .authorized(alice, "read")
       .filter(Document.id.in_(subquery))
       .all()
@@ -199,11 +199,11 @@ def test_authorized_with_complex_queries(oso_session: sqlalchemy_oso_cloud.Sessi
   assert len(documents) > 0
   assert all(document.is_public for document in documents)  # All returned documents should be public
 
-  count_query = oso_session.query(Document.status, func.count(Document.id).label('count')).group_by(Document.status).authorized(alice, "read") 
+  count_query = session.query(Document.status, func.count(Document.id).label('count')).group_by(Document.status).authorized(alice, "read") 
   count_results = count_query.all()
   assert len(count_results) > 0 
 
-def test_authorized_on_column(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
-  documents = oso_session.query(Document.id).authorized(alice, "read").all() 
+def test_authorized_on_column(session: sqlalchemy_oso_cloud.Session, alice: Value):
+  documents = session.query(Document.id).authorized(alice, "read").all() 
   assert len(documents) > 0
   assert all(isinstance(doc.id, int) for doc in documents)

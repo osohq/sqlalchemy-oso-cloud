@@ -114,7 +114,7 @@ def setup_postgres_data(session: Session):
     doc1.embedding = [0.1, 0.2, 0.3]
     doc2.embedding = [0.4, 0.5, 0.6]
     doc3.embedding = [0.7, 0.8, 0.9]
-    
+
   session.add(org1)
   session.add(org2)
   session.add(org3)
@@ -136,6 +136,6 @@ def init_sqlalchemy_oso_cloud(oso_url: str, oso_auth: str):
   sqlalchemy_oso_cloud.init(Base.registry, url=oso_url, api_key=oso_auth)
 
 @pytest.fixture
-def oso_session(engine: Engine):
+def session(engine: Engine):
   with sqlalchemy_oso_cloud.Session(engine) as session:
     yield session
