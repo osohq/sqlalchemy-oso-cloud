@@ -89,9 +89,9 @@ def test_select_without_auth_filter(oso_session: sqlalchemy_oso_cloud.Session):
   assert documents[0].id == 1
   assert documents[1].id == 2
 
-def test_authorized_as_options(oso_session, alice: Value):
+def test_authorized_as_options(session, alice: Value):
   statement = sqla_select(Document).options(authorized(alice, "read", Document))
-  documents = oso_session.execute(statement).scalars().all()
+  documents = session.execute(statement).scalars().all()
   assert len(documents) > 0
 
 def test_authorize_with_filter(oso_session: sqlalchemy_oso_cloud.Session, alice: Value):
