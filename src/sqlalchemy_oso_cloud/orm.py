@@ -5,7 +5,6 @@ Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapp
 
 from typing import Callable, Optional, Protocol, Any
 from typing_extensions import ParamSpec, TypeVar, Concatenate
-from functools import wraps
 
 from sqlalchemy.orm import MappedColumn, Relationship, mapped_column, relationship
 
