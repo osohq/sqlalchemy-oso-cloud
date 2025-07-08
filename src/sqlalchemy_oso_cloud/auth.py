@@ -1,11 +1,13 @@
-from sqlalchemy.orm import with_loader_criteria
 from sqlalchemy import literal_column, ColumnClause
+from sqlalchemy.orm import with_loader_criteria, LoaderCriteriaOption
 from oso_cloud import Value
-from typing import Set, Type, Callable, Union
-from .query import Query
+from typing import List, Set, Type, Callable, Union, Optional, TYPE_CHECKING
 from .orm import Resource
 from .oso import get_oso
-from .select_impl import Select
+
+if TYPE_CHECKING:
+    from .query import Query
+    from .select_impl import Select
 
 __all__ = ['authorized', '_apply_authorization_options']
 
@@ -35,7 +37,7 @@ def create_auth_criteria_for_model(model: Type, actor: Value, action: str) -> Ca
     return lambda cls: criteria
 
 
-def authorized(actor: Value, action: str, *models: Type) -> list:
+def authorized(actor: Value, action: str, model: Type) -> LoaderCriteriaOption:
     """
     Create authorization options for use with .options()
     
@@ -58,30 +60,55 @@ def authorized(actor: Value, action: str, *models: Type) -> list:
     :return: List of loader criteria options for use with .options()
     """
     
-    if len(models) == 0:
+    if not model:
         raise ValueError("Must provide a model to authorize against.")
+   
+    if not issubclass(model, Resource):
+        raise ValueError(f"Model {model.__name__} must inherit from Resource to use authorization")
 
-    options = []
-    for model in models:
-        if not issubclass(model, Resource):
-            continue
-        auth_criteria = create_auth_criteria_for_model(model, actor, action)
-        options.append(
-            with_loader_criteria(
-                model,
-                auth_criteria,
-                include_aliases=True
-            )
+    
+    auth_criteria = create_auth_criteria_for_model(model, actor, action)
+
+    return with_loader_criteria(
+            model,
+            auth_criteria,
+            include_aliases=True
         )
-    return options
+    
 
 
-def _apply_authorization_options(query_obj: Union[Query | Select], actor: Value, action: str):
+def _authorize_all_models(query_obj: Union["Query", "Select"], actor: Value, action: str) -> List[LoaderCriteriaOption]:
+    """
+    Create authorization options for all Resource models in a query.
+
+    :param query_obj: The query object to extract models from
+    :param actor: The actor performing the action
+    :param action: The action to authorize
+    :return: List of authorization options for all Resource models
+    """
+    models = extract_unique_models(query_obj.column_descriptions)
+    auth_options = []
+
+    for model in models:
+        if issubclass(model, Resource):
+            auth_options.append(authorized(actor, action, model))
+
+    if not auth_options:
+        raise ValueError("No Resource models found in query to authorize")
+
+    return auth_options
+
+
+def _apply_authorization_options(query_obj: Union["Query",  "Select"], actor: Value, action: str, model: Optional[Type] = None):
     """
     Apply authorization to any query-like object that has column_descriptions and options()
     
     This works with both Select and Query objects.
     """
-    models = extract_unique_models(query_obj.column_descriptions)
-    auth_options = authorized(actor, action, *models)
-    return query_obj.options(*auth_options)
+
+    if model is not None:
+        auth_option = authorized(actor, action, model)
+        return query_obj.options(auth_option)
+    else:
+        auth_options = _authorize_all_models(query_obj, actor, action)
+        return query_obj.options(*auth_options)

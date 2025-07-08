@@ -15,10 +15,10 @@ The main features are:
 See the [README](https://github.com/osohq/sqlalchemy-oso-cloud) for more information.
 """
 from . import orm
+from .session import Session
+from .query import Query
 from .oso import init, get_oso
 from .select_impl import Select, select
-from .auth import authorized
-from .query import Query
-from .session import Session
+from .auth import authorized, _apply_authorization_options
 
-__all__ = ["orm", "init", "get_oso", "Query", "Session", "Select", "select", "authorized"]
+__all__ = ["orm", "Session", "Query", "init", "get_oso", "Select", "select", "authorized", "_apply_authorization_options"]
