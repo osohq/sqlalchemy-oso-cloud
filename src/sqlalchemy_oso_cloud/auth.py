@@ -1,9 +1,11 @@
 from sqlalchemy.orm import with_loader_criteria
 from sqlalchemy import literal_column, ColumnClause
 from oso_cloud import Value
-from typing import Set, Type, Callable
+from typing import Set, Type, Callable, Union
+from .query import Query
 from .orm import Resource
 from .oso import get_oso
+from .select_impl import Select
 
 __all__ = ['authorized', '_apply_authorization_options']
 
@@ -56,8 +58,6 @@ def authorized(actor: Value, action: str, *models: Type) -> list:
     :return: List of loader criteria options for use with .options()
     """
     
-    if len(models) > 1:
-        raise ValueError("Currently only single model authorization is supported.")
     if len(models) == 0:
         raise ValueError("Must provide a model to authorize against.")
 
@@ -76,7 +76,7 @@ def authorized(actor: Value, action: str, *models: Type) -> list:
     return options
 
 
-def _apply_authorization_options(query_obj, actor: Value, action: str):
+def _apply_authorization_options(query_obj: Union[Query | Select], actor: Value, action: str):
     """
     Apply authorization to any query-like object that has column_descriptions and options()
     
