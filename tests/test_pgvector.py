@@ -161,8 +161,6 @@ def test_vector_select_with_joins(oso_session: OsoSession, alice: Value):
         .authorized(alice, "read")
     )
     documents = oso_session.execute(stmt).scalars().all()
-
-    print(f"docs in multi: {documents}")
         
     assert all(doc.organization.name == "acme" for doc in documents)
 
