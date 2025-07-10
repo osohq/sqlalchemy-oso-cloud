@@ -39,10 +39,9 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
       facts.update(bindings)
       continue
     for attr in mapper.attrs:
-      if isinstance(attr, RelationshipProperty):
-        if _RELATION_INFO_KEY in attr.info:
-          bindings = gen_relation_binding(attr, mapper, id_column)
-          facts.update(bindings)
+      if isinstance(attr, RelationshipProperty) and _RELATION_INFO_KEY in attr.info:
+        bindings = gen_relation_binding(attr, mapper, id_column)
+        facts.update(bindings)
       elif isinstance(attr, ColumnProperty):
         if _ATTRIBUTE_INFO_KEY in attr.columns[0].info:
           bindings = gen_attribute_binding(attr, mapper, id_column)
