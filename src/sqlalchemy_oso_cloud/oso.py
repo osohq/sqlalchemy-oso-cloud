@@ -4,12 +4,14 @@ import yaml
 from typing import TypedDict, Optional, Union
 from oso_cloud import Oso
 from sqlalchemy import select
+from sqlalchemy.sql.schema import Table
 from sqlalchemy.orm import Mapper, RelationshipProperty, registry, ColumnProperty
 from sqlalchemy.sql.elements import NamedColumn
 from sqlalchemy.sql.sqltypes import Boolean, Integer, String, TypeEngine
 from tempfile import NamedTemporaryFile
 
-from .orm import _ATTRIBUTE_INFO_KEY, Resource, _RELATION_INFO_KEY, _REMOTE_RELATION_INFO_KEY
+from .orm import _ATTRIBUTE_INFO_KEY, Resource, _RELATION_INFO_KEY, _REMOTE_RELATION_INFO_KEY, RoleMapping
+from .orm import _ROLE_MAPPING_ACTOR_INFO_KEY, _ROLE_MAPPING_ROLE_INFO_KEY, _ROLE_MAPPING_RESOURCE_INFO_KEY
 
 class FactConfig(TypedDict):
   query: str
@@ -32,10 +34,15 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
       raise ValueError("Oso id must be a single column")
     id_column = id.columns[0]
     sql_types[mapper.class_.__name__] = str(id_column.type)
+    if issubclass(mapper.class_, RoleMapping):
+      bindings = gen_role_mapping_binding(mapper)
+      facts.update(bindings)
+      continue
     for attr in mapper.attrs:
-      if isinstance(attr, RelationshipProperty) and _RELATION_INFO_KEY in attr.info:
-        bindings = gen_relation_binding(attr, mapper, id_column)
-        facts.update(bindings)
+      if isinstance(attr, RelationshipProperty):
+        if _RELATION_INFO_KEY in attr.info:
+          bindings = gen_relation_binding(attr, mapper, id_column)
+          facts.update(bindings)
       elif isinstance(attr, ColumnProperty):
         if _ATTRIBUTE_INFO_KEY in attr.columns[0].info:
           bindings = gen_attribute_binding(attr, mapper, id_column)
@@ -98,6 +105,57 @@ def gen_remote_relation_binding(attribute: ColumnProperty, mapper: Mapper, id_co
   return {
     key: {
       "query": str(select(id_column, column)),
+    }
+  }
+
+def _get_classname_by_table(table: Table, registry: registry) -> Optional[str]:
+  for m in registry.mappers:
+    if m.local_table == table:
+      return m.class_.__name__
+  return None
+
+def _get_oso_type(column: NamedColumn, registry: registry, info_key: str, role_mapping_type: str) -> str:
+  foreign_keys = list(column.foreign_keys)
+  oso_type: Optional[str] = None
+  if len(foreign_keys) == 0:
+    if column.info[info_key] is None:
+      raise ValueError(f"Oso role mapping {role_mapping_type} type must be provided if it is not a foreign key")
+    oso_type = column.info[info_key]
+  else:
+    fk = foreign_keys[0].column
+    oso_type = _get_classname_by_table(fk.table, registry)
+  if oso_type is None:
+    raise ValueError(f"Oso role mapping {role_mapping_type} type could not be determined")
+  return oso_type
+
+def gen_role_mapping_binding(mapper: Mapper) -> dict[str, FactConfig]:
+  actor_type: Optional[str] = None
+  resource_type: Optional[str] = None
+  actor_column: Optional[NamedColumn] = None
+  role_column: Optional[NamedColumn] = None
+  resource_column: Optional[NamedColumn] = None
+  for attr in mapper.attrs:
+    if isinstance(attr, ColumnProperty) and any(info_key in attr.columns[0].info for info_key in [_ROLE_MAPPING_ROLE_INFO_KEY, _ROLE_MAPPING_RESOURCE_INFO_KEY, _ROLE_MAPPING_ACTOR_INFO_KEY]):
+      if len(attr.columns) != 1:
+        raise ValueError(f"Oso role mapping attribute {attr.key} must be a single column")
+      if _ROLE_MAPPING_ACTOR_INFO_KEY in attr.columns[0].info:
+        actor_column = attr.columns[0]
+        actor_type = _get_oso_type(actor_column, mapper.registry, _ROLE_MAPPING_ACTOR_INFO_KEY, "actor")
+      elif _ROLE_MAPPING_ROLE_INFO_KEY in attr.columns[0].info:
+        role_column = attr.columns[0]
+      elif _ROLE_MAPPING_RESOURCE_INFO_KEY in attr.columns[0].info:
+        resource_column = attr.columns[0]
+        resource_type = _get_oso_type(resource_column, mapper.registry, _ROLE_MAPPING_RESOURCE_INFO_KEY, "resource")
+  if actor_column is None:
+    raise ValueError("Oso role mapping must have an actor column")
+  if role_column is None or not isinstance(role_column.type, String):
+    raise ValueError("Oso role mapping must have a role column of type String")
+  if resource_column is None:
+    raise ValueError("Oso role mapping must have a resource column")
+  key = f"has_role({actor_type}:_, String:_, {resource_type}:_)"
+  return {
+    key: {
+      "query": str(select(actor_column, role_column, resource_column)),
     }
   }
 
