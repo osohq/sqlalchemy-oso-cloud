@@ -16,3 +16,5 @@ resource Document {
   "read" if is_public(resource);
   "write" if "editor" on "team";
 }
+
+actor Agent {}

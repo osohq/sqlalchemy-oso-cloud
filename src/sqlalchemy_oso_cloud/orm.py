@@ -14,15 +14,25 @@ class Resource:
   """
   pass
 
+class RoleMapping:
+  """
+  A mixin to indicate that an ORM model corresponds to an Oso role mapping.
+  """
+  pass
+
 _RELATION_INFO_KEY = "_oso.relation"
 _ATTRIBUTE_INFO_KEY = "_oso.attribute"
 _REMOTE_RELATION_INFO_KEY = "_oso.remote_relation"
+_ROLE_MAPPING_INFO_KEY = "_oso.role_mapping"
+_ROLE_MAPPING_ACTOR_INFO_KEY = "_oso.role_mapping_actor"
+_ROLE_MAPPING_ROLE_INFO_KEY = "_oso.role_mapping_role"
+_ROLE_MAPPING_RESOURCE_INFO_KEY = "_oso.role_mapping_resource"
 
 P = ParamSpec('P')
 T = TypeVar('T')
 R = TypeVar('R', covariant=True)
 
-def _wrap(func: Callable[P, Any]) -> Callable[[Callable[P, T]], Callable[P, T]]:
+def _wrap(_: Callable[P, Any]) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Wrap a SQLAlchemy function in a type-safe way."""
     def decorator(wrapper: Callable[P, T]) -> Callable[P, T]:
       def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
@@ -30,13 +40,13 @@ def _wrap(func: Callable[P, Any]) -> Callable[[Callable[P, T]], Callable[P, T]]:
       return wrapped
     return decorator
 
-class _WithExtraKwargs(Protocol[P, R]):
+class _WithExtraKwargsRemoteRelation(Protocol[P, R]):
     def __call__(self, remote_resource_name: str, remote_relation_key: Optional[str] = None, *args: P.args, **kwargs: P.kwargs) -> R:
         ...
 
-def _add_params(wrapped_func: Callable[P, R]) -> Callable[[_WithExtraKwargs[P, R]], _WithExtraKwargs[P, R]]:
+def _add_params_remote_relation(_: Callable[P, R]) -> Callable[[_WithExtraKwargsRemoteRelation[P, R]], _WithExtraKwargsRemoteRelation[P, R]]:
   """Adds extra keyword parameters to `remote_relation` in order to support static type checking."""
-  def decorator(wrapper: Callable[Concatenate[str, Optional[str], P], R]) -> _WithExtraKwargs[P, R]:
+  def decorator(wrapper: Callable[Concatenate[str, Optional[str], P], R]) -> _WithExtraKwargsRemoteRelation[P, R]:
     def wrapped(remote_resource_name: str, remote_relation_key: Optional[str] = None, *args: P.args, **kwargs: P.kwargs) -> R:
       return wrapper(remote_resource_name, remote_relation_key, *args, **kwargs)
     return wrapped
@@ -71,7 +81,7 @@ def attribute(*args, **kwargs) -> MappedColumn:
   col.column.info[_ATTRIBUTE_INFO_KEY] = None
   return col
 
-@_add_params(mapped_column)
+@_add_params_remote_relation(mapped_column)
 def remote_relation(remote_resource_name: str, remote_relation_key: Optional[str] = None, *args, **kwargs) -> MappedColumn:
   """
   A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
@@ -89,4 +99,42 @@ def remote_relation(remote_resource_name: str, remote_relation_key: Optional[str
   """
   col = mapped_column(*args, **kwargs)
   col.column.info[_REMOTE_RELATION_INFO_KEY] = (remote_resource_name, remote_relation_key)
+  return col
+
+def actor(*args, actor_type: Optional[str] = None, **kwargs) -> MappedColumn:
+  """
+  A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
+  that indicates that the attribute corresponds to the actor in the `has_role` fact.
+
+  Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
+  Also accepts the following additional arguments:
+  :param actor_type: the type of the actor object in Oso. Must be provided if it is not a foreign key.
+  """
+  col = mapped_column(*args, **kwargs)
+  col.column.info[_ROLE_MAPPING_ACTOR_INFO_KEY] = actor_type
+  return col
+
+@_wrap(mapped_column)
+def role(*args, **kwargs) -> MappedColumn:
+  """
+  A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
+  that indicates that the attribute corresponds to the role in the `has_role` fact.
+
+  Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
+  """
+  col = mapped_column(*args, **kwargs)
+  col.column.info[_ROLE_MAPPING_ROLE_INFO_KEY] = None
+  return col
+
+def resource(*args, resource_type: Optional[str] = None, **kwargs) -> MappedColumn:
+  """
+  A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
+  that indicates that the attribute corresponds to the resource in the `has_role` fact.
+
+  Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
+  Also accepts the following additional arguments:
+  :param resource_type: the type of the resource object in Oso. Must be provided if it is not a foreign key.
+  """
+  col = mapped_column(*args, **kwargs)
+  col.column.info[_ROLE_MAPPING_RESOURCE_INFO_KEY] = resource_type
   return col
