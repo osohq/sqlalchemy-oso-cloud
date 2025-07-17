@@ -14,12 +14,6 @@ class Resource:
   """
   pass
 
-class RoleMapping:
-  """
-  A mixin to indicate that an ORM model corresponds to an Oso role mapping.
-  """
-  pass
-
 _RELATION_INFO_KEY = "_oso.relation"
 _ATTRIBUTE_INFO_KEY = "_oso.attribute"
 _REMOTE_RELATION_INFO_KEY = "_oso.remote_relation"
@@ -101,40 +95,48 @@ def remote_relation(remote_resource_name: str, remote_relation_key: Optional[str
   col.column.info[_REMOTE_RELATION_INFO_KEY] = (remote_resource_name, remote_relation_key)
   return col
 
-def actor(*args, actor_type: Optional[str] = None, **kwargs) -> MappedColumn:
+class HasRole:
   """
-  A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
-  that indicates that the attribute corresponds to the actor in the `has_role` fact.
+  A mixin to indicate that an ORM model corresponds to an Oso `has_role` fact.
+  """
+  @staticmethod
+  def actor(*args, actor_type: Optional[str] = None, **kwargs) -> MappedColumn:
+    """
+    A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
+    that indicates that the attribute corresponds to the actor in the `has_role` fact.
 
-  Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
-  Also accepts the following additional arguments:
-  :param actor_type: the type of the actor object in Oso. Must be provided if it is not a foreign key.
-  """
-  col = mapped_column(*args, **kwargs)
-  col.column.info[_ROLE_MAPPING_ACTOR_INFO_KEY] = actor_type
-  return col
+    Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
+    Also accepts the following additional arguments:
+    :param actor_type: the type of the actor object in Oso. Must be provided if it is not a foreign key.
+    """
+    col = mapped_column(*args, **kwargs)
+    col.column.info[_ROLE_MAPPING_ACTOR_INFO_KEY] = actor_type
+    return col
 
-@_wrap(mapped_column)
-def role(*args, **kwargs) -> MappedColumn:
-  """
-  A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
-  that indicates that the attribute corresponds to the role in the `has_role` fact.
+  @staticmethod
+  def role(*args, role_type: Optional[str] = None, **kwargs) -> MappedColumn:
+    """
+    A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
+    that indicates that the attribute corresponds to the role in the `has_role` fact.
 
-  Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
-  """
-  col = mapped_column(*args, **kwargs)
-  col.column.info[_ROLE_MAPPING_ROLE_INFO_KEY] = None
-  return col
+    Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
+    Also accepts the following additional arguments:
+    :param role_type: the type of the role object in Oso. Must be provided if it is not a foreign key.
+    """
+    col = mapped_column(*args, **kwargs)
+    col.column.info[_ROLE_MAPPING_ROLE_INFO_KEY] = role_type
+    return col
 
-def resource(*args, resource_type: Optional[str] = None, **kwargs) -> MappedColumn:
-  """
-  A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
-  that indicates that the attribute corresponds to the resource in the `has_role` fact.
+  @staticmethod
+  def resource(*args, resource_type: Optional[str] = None, **kwargs) -> MappedColumn:
+    """
+    A wrapper around [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column)
+    that indicates that the attribute corresponds to the resource in the `has_role` fact.
 
-  Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
-  Also accepts the following additional arguments:
-  :param resource_type: the type of the resource object in Oso. Must be provided if it is not a foreign key.
-  """
-  col = mapped_column(*args, **kwargs)
-  col.column.info[_ROLE_MAPPING_RESOURCE_INFO_KEY] = resource_type
-  return col
+    Accepts all of the same arguments as [`sqlalchemy.orm.mapped_column`](https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column).
+    Also accepts the following additional arguments:
+    :param resource_type: the type of the resource object in Oso. Must be provided if it is not a foreign key.
+    """
+    col = mapped_column(*args, **kwargs)
+    col.column.info[_ROLE_MAPPING_RESOURCE_INFO_KEY] = resource_type
+    return col

@@ -10,7 +10,7 @@ from oso_cloud import Oso, Value
 
 import sqlalchemy_oso_cloud
 
-from .models import Base, Organization, Document, Agent, Role, AgentOrganizationRole
+from .models import Base, Organization, Document, Agent, AgentOrganizationRole
 
 
 @pytest.fixture(scope="session")
@@ -109,15 +109,13 @@ def setup_postgres_data(session: Session):
   doc1 = Document(id=1, organization=org1, content="hello", status="draft", is_public=False, team_id=111)
   doc2 = Document(id=2, organization=org2, content="world", status="published", is_public=False, team_id=111)
   doc3 = Document(id=3, organization=org3, content="world", status="published", is_public=True, team_id=222)
-  role1 = Role(id="admin", description="admin can read all documents in org")
   agent1 = Agent(id=1, name="artemis", organization=org1)
   agent2 = Agent(id=2, name="bellerophon", organization=org2)
-  agent1_role1 = AgentOrganizationRole(id=1, agent=agent1, organization=org1, role=role1)
-  agent2_role1 = AgentOrganizationRole(id=2, agent=agent2, organization=org2, role=role1)
+  agent1_role1 = AgentOrganizationRole(id=1, agent=agent1, organization=org1, role_id="admin")
+  agent2_role1 = AgentOrganizationRole(id=2, agent=agent2, organization=org2, role_id="admin")
   session.add(org1)
   session.add(org2)
   session.add(org3)
-  session.add(role1)
   session.add(agent1)
   session.add(agent2)
   session.add(doc1)
@@ -130,7 +128,6 @@ def setup_postgres_data(session: Session):
   session.delete(org1)
   session.delete(org2)
   session.delete(org3)
-  session.delete(role1)
   session.delete(agent1)
   session.delete(agent2)
   session.delete(doc1)

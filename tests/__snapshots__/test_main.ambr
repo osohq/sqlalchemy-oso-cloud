@@ -22,10 +22,8 @@
       query: "SELECT document.id \nFROM document \nWHERE document.is_public"
   sql_types:
     Agent: INTEGER
-    AgentOrganizationRole: INTEGER
     Document: INTEGER
     Organization: INTEGER
-    Role: VARCHAR(50)
     Team: INTEGER
   
   '''
