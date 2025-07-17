@@ -167,16 +167,15 @@ def test_vector_select_with_joins(oso_session: OsoSession, alice: Value):
 def test_max_inner_product_search(oso_session: OsoSession, alice: Value):
     query_vector = [0.5, 0.5, 0.5]
     
-    if hasattr(Document, 'embedding'):
-        stmt = (
-            select(Document)
-            .order_by(Document.embedding.max_inner_product(query_vector).desc())
-            .authorized(alice, "read")
-            .limit(5)
-        )
-        documents = oso_session.execute(stmt).scalars().all()
-        
-        assert len(documents) > 0
+    stmt = (
+        select(Document)
+        .order_by(Document.embedding.max_inner_product(query_vector).desc())
+        .authorized(alice, "read")
+        .limit(5)
+    )
+    documents = oso_session.execute(stmt).scalars().all()
+
+    assert len(documents) > 0
 
 
 def test_no_interference_with_non_vector_queries(oso_session: OsoSession, alice: Value):

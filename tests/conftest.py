@@ -110,10 +110,9 @@ def setup_postgres_data(session: Session):
   doc2 = Document(id=2, organization=org2, content="world", status="published", is_public=False, team_id=111)
   doc3 = Document(id=3, organization=org3, content="world", status="published", is_public=True, team_id=222)
 
-  if hasattr(Document, 'embedding'):
-    doc1.embedding = [0.1, 0.2, 0.3]
-    doc2.embedding = [0.4, 0.5, 0.6]
-    doc3.embedding = [0.7, 0.8, 0.9]
+  doc1.embedding = [0.1, 0.2, 0.3]
+  doc2.embedding = [0.4, 0.5, 0.6]
+  doc3.embedding = [0.7, 0.8, 0.9]
 
   session.add(org1)
   session.add(org2)
