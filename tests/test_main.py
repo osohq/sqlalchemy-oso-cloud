@@ -207,3 +207,13 @@ def test_authorized_on_column(oso_session: sqlalchemy_oso_cloud.Session, alice: 
   documents = oso_session.query(Document.id).authorized(alice, "read").all() 
   assert len(documents) > 0
   assert all(isinstance(doc.id, int) for doc in documents)
+
+def test_agent_role_mapping(oso_session: sqlalchemy_oso_cloud.Session, artemis: Value, bellerophon: Value):
+  documents = oso_session.query(Document).authorized(artemis, "read").all()
+  assert len(documents) == 3
+  documents = oso_session.query(Document).authorized(bellerophon, "read").all()
+  assert len(documents) == 2
+  documents = oso_session.query(Document).authorized(artemis, "write").all()
+  assert len(documents) == 0
+  documents = oso_session.query(Document).authorized(bellerophon, "write").all()
+  assert len(documents) == 0

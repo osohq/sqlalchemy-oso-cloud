@@ -1,5 +1,6 @@
 import os
 import yaml
+from enum import Enum
 
 from typing import TypedDict, Optional, Union
 from oso_cloud import Oso
@@ -9,7 +10,8 @@ from sqlalchemy.sql.elements import NamedColumn
 from sqlalchemy.sql.sqltypes import Boolean, Integer, String, TypeEngine
 from tempfile import NamedTemporaryFile
 
-from .orm import _ATTRIBUTE_INFO_KEY, Resource, _RELATION_INFO_KEY, _REMOTE_RELATION_INFO_KEY
+from .orm import _ATTRIBUTE_INFO_KEY, Resource, _RELATION_INFO_KEY, _REMOTE_RELATION_INFO_KEY, HasRole
+from .orm import _ROLE_MAPPING_ACTOR_INFO_KEY, _ROLE_MAPPING_ROLE_INFO_KEY, _ROLE_MAPPING_RESOURCE_INFO_KEY
 
 class FactConfig(TypedDict):
   query: str
@@ -23,6 +25,11 @@ def generate_local_authorization_config(registry: registry) -> LocalAuthorizatio
   sql_types: dict[str, str] = {}
 
   for mapper in registry.mappers:
+    if issubclass(mapper.class_, HasRole):
+      bindings, new_sql_types = gen_has_role_binding(mapper)
+      facts.update(bindings)
+      sql_types.update(new_sql_types)
+      continue
     if not issubclass(mapper.class_, Resource):
       continue
     id = mapper.get_property("id")
@@ -100,6 +107,78 @@ def gen_remote_relation_binding(attribute: ColumnProperty, mapper: Mapper, id_co
       "query": str(select(id_column, column)),
     }
   }
+
+class HasRoleType(Enum):
+  ACTOR = "actor"
+  ROLE = "role"
+  RESOURCE = "resource"
+
+def _get_oso_type_from_fk(column: NamedColumn, registry: registry, info_key: str, role_mapping_type: HasRoleType) -> str:
+  """
+  Get the Oso type for a column - this is the type used in the `has_role` fact.
+  """
+  foreign_keys = list(column.foreign_keys)
+  oso_type: Optional[str] = None
+  if len(foreign_keys) == 0:
+    if role_mapping_type == HasRoleType.ROLE:
+      return "String"
+    if column.info[info_key] is None:
+      raise ValueError(f"Oso role mapping {role_mapping_type} type must be provided if it is not a foreign key")
+    oso_type = column.info[info_key]
+  else:
+    if column.info[info_key] is not None:
+      raise ValueError(f"Oso role mapping {role_mapping_type} cannot be provided if the column is a foreign key")
+    fk = foreign_keys[0].column
+    oso_type = None
+    # get the ORM class name for the table that the foreign key points to
+    for m in registry.mappers:
+      if m.local_table == fk.table:
+        oso_type = m.class_.__name__
+        if not issubclass(m.class_, Resource):
+          if role_mapping_type != HasRoleType.ROLE:
+            raise ValueError(f"Oso role mapping {role_mapping_type} must be an Oso Resource")
+          elif role_mapping_type == HasRoleType.ROLE:
+            # if the role is not defined in the model as an Oso Resource, it will be a String type in the has_role fact
+            return "String"
+        break
+  if oso_type is None:
+    raise ValueError(f"Oso role mapping {role_mapping_type} type could not be determined")
+  return oso_type
+
+def gen_has_role_binding(mapper: Mapper) -> tuple[dict[str, FactConfig], dict[str, str]]:
+  has_role_columns: dict[HasRoleType, NamedColumn] = {}
+  has_role_types: dict[HasRoleType, str] = {}
+  sql_types: dict[str, str] = {}
+
+  for attr in mapper.attrs:
+    if isinstance(attr, ColumnProperty) and any(info_key in attr.columns[0].info for info_key in [_ROLE_MAPPING_ROLE_INFO_KEY, _ROLE_MAPPING_RESOURCE_INFO_KEY, _ROLE_MAPPING_ACTOR_INFO_KEY]):
+      if len(attr.columns) != 1:
+        raise ValueError(f"Oso role mapping attribute {attr.key} must be a single column")
+      for info_key, role_mapping_type in [(_ROLE_MAPPING_ACTOR_INFO_KEY, HasRoleType.ACTOR), (_ROLE_MAPPING_ROLE_INFO_KEY, HasRoleType.ROLE), (_ROLE_MAPPING_RESOURCE_INFO_KEY, HasRoleType.RESOURCE)]:
+        if info_key in attr.columns[0].info:
+          if info_key in has_role_columns:
+            raise ValueError("Oso role mapping can only have a single column for each role mapping type")
+          column = attr.columns[0]
+          oso_type = _get_oso_type_from_fk(column, mapper.registry, info_key, role_mapping_type)
+          has_role_types[role_mapping_type] = oso_type
+          if oso_type != "String":
+            sql_types[oso_type] = str(column.type)
+          has_role_columns[role_mapping_type] = column
+
+  if has_role_columns[HasRoleType.ACTOR] is None:
+    raise ValueError("Oso role mapping must have an actor column")
+  if has_role_columns[HasRoleType.ROLE] is None or not isinstance(has_role_columns[HasRoleType.ROLE].type, String):
+    raise ValueError("Oso role mapping must have a role column of type String")
+  if has_role_columns[HasRoleType.RESOURCE] is None:
+    raise ValueError("Oso role mapping must have a resource column")
+
+  key = f"has_role({has_role_types[HasRoleType.ACTOR]}:_, {has_role_types[HasRoleType.ROLE]}:_, {has_role_types[HasRoleType.RESOURCE]}:_)"
+  bindings: dict[str, FactConfig] = {
+    key: {
+      "query": str(select(has_role_columns[HasRoleType.ACTOR], has_role_columns[HasRoleType.ROLE], has_role_columns[HasRoleType.RESOURCE])),
+    }
+  }
+  return bindings, sql_types
 
 def to_polar_type(column_type: TypeEngine) -> str:
   if isinstance(column_type, Integer):
