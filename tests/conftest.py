@@ -2,7 +2,7 @@ import socket
 from testcontainers.core.container import DockerContainer  # type: ignore
 from testcontainers.postgres import PostgresContainer  # type: ignore
 from testcontainers.core.waiting_utils import wait_for, wait_container_is_ready  # type: ignore
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.exc import OperationalError
 import pytest
 from sqlalchemy.orm import Session
@@ -28,7 +28,12 @@ def oso_dev_server():
 
 @pytest.fixture(scope="session")
 def postgres():
-  container = PostgresContainer()
+  container = PostgresContainer(
+    image="pgvector/pgvector:pg17",
+    username="test",
+    password="test",
+    dbname="test"
+  )
   container.start()
   yield container
   container.stop()
@@ -38,6 +43,9 @@ def engine(postgres: PostgresContainer):
   # for some reason, the waiting already built into PostgresContainer.start() is insufficient
   @wait_container_is_ready(OperationalError)
   def create_tables():
+    with engine.connect() as conn:
+      conn.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
+      conn.commit()
     Base.metadata.create_all(engine)
 
   engine = create_engine(postgres.get_connection_url())
@@ -113,6 +121,9 @@ def setup_postgres_data(session: Session):
   agent2 = Agent(id=2, name="bellerophon", organization=org2)
   agent1_role1 = AgentOrganizationRole(id=1, agent=agent1, organization=org1, role_id="admin")
   agent2_role1 = AgentOrganizationRole(id=2, agent=agent2, organization=org2, role_id="admin")
+  doc1.embedding = [0.1, 0.2, 0.3]
+  doc2.embedding = [0.4, 0.5, 0.6]
+  doc3.embedding = [0.7, 0.8, 0.9]
   session.add(org1)
   session.add(org2)
   session.add(org3)

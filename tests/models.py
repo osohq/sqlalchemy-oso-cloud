@@ -1,4 +1,5 @@
 from datetime import datetime
+from pgvector.sqlalchemy import Vector # type: ignore
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, String
 from sqlalchemy_oso_cloud.orm import Resource, HasRole, relation, attribute, remote_relation
@@ -38,3 +39,4 @@ class Document(Base, Resource):
   content: Mapped[str]
   status: Mapped[str] = attribute()
   is_public: Mapped[bool] = attribute(default=False)
+  embedding: Mapped[list[float]] = mapped_column(Vector(3), nullable=True)
