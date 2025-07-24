@@ -2,10 +2,22 @@ import sqlalchemy.orm
 from .query import Query
 from sqlalchemy.engine import Row, Result
 from sqlalchemy.orm.attributes import InstrumentedAttribute
-from sqlalchemy.orm._typing import OrmExecuteOptionsParameter
-from sqlalchemy.util._collections import EMPTY_DICT
+
 from sqlalchemy.sql.selectable import TypedReturnsRows
 from typing import Type, TypeVar, overload, Any, Tuple, Union, Optional, Sequence, Mapping, TypeAlias
+
+try:
+    from sqlalchemy.orm._typing import OrmExecuteOptionsParameter as _OrmExecuteOptionsParameter
+    from sqlalchemy.util._collections import EMPTY_DICT as _EMPTY_DICT
+
+    OrmExecuteOptionsParameter: TypeAlias = _OrmExecuteOptionsParameter
+    EMPTY_DICT = _EMPTY_DICT
+
+except ImportError:
+    # Fallback for internal types
+    OrmExecuteOptionsParameter: TypeAlias = Mapping[str, Any] # type: ignore[misc, no-redef]
+    EMPTY_DICT = {} # type: ignore[assignment]
+   
 
 T = TypeVar("T")
 T1 = TypeVar("T1")
@@ -91,7 +103,7 @@ class Session(sqlalchemy.orm.Session):
       statement: TypedReturnsRows[Tuple[T]],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
@@ -104,7 +116,7 @@ class Session(sqlalchemy.orm.Session):
       statement: TypedReturnsRows[Tuple[T1, T2]],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
@@ -117,7 +129,7 @@ class Session(sqlalchemy.orm.Session):
       statement: TypedReturnsRows[Tuple[T1, T2, T3]],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
@@ -130,7 +142,7 @@ class Session(sqlalchemy.orm.Session):
       statement: TypedReturnsRows[Tuple[T1, T2, T3, T4]],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
@@ -141,7 +153,7 @@ class Session(sqlalchemy.orm.Session):
       statement: TypedReturnsRows[Any],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
