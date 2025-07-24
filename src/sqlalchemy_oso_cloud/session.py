@@ -4,19 +4,18 @@ from sqlalchemy.engine import Row, Result
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 from sqlalchemy.sql.selectable import TypedReturnsRows
-from typing import Type, TypeVar, overload, Any, Tuple, Union, Optional, Sequence, Mapping, TypeAlias
+from typing import Type, TypeVar, overload, Any, Tuple, Union, Optional, Sequence, Mapping, TYPE_CHECKING
 
-try:
-    from sqlalchemy.orm._typing import OrmExecuteOptionsParameter as _OrmExecuteOptionsParameter
-    from sqlalchemy.util._collections import EMPTY_DICT as _EMPTY_DICT
-
-    OrmExecuteOptionsParameter: TypeAlias = _OrmExecuteOptionsParameter
-    EMPTY_DICT = _EMPTY_DICT
-
-except ImportError:
-    # Fallback for internal types
-    OrmExecuteOptionsParameter: TypeAlias = Mapping[str, Any] # type: ignore[misc, no-redef]
-    EMPTY_DICT = {} # type: ignore[assignment]
+if TYPE_CHECKING:
+    from sqlalchemy.orm._typing import OrmExecuteOptionsParameter
+    from sqlalchemy.util._collections import EMPTY_DICT
+else:
+    try:
+        from sqlalchemy.orm._typing import OrmExecuteOptionsParameter
+        from sqlalchemy.util._collections import EMPTY_DICT
+    except ImportError:
+        OrmExecuteOptionsParameter = Mapping[str, Any]  # type: ignore[misc]
+        EMPTY_DICT = {}  # type: ignore[assignment]
    
 
 T = TypeVar("T")
