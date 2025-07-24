@@ -2,8 +2,10 @@ import sqlalchemy.orm
 from .query import Query
 from sqlalchemy.engine import Row, Result
 from sqlalchemy.orm.attributes import InstrumentedAttribute
+from sqlalchemy.orm._typing import OrmExecuteOptionsParameter
+from sqlalchemy.util._collections import EMPTY_DICT
 from sqlalchemy.sql.selectable import TypedReturnsRows
-from typing import Type, TypeVar, overload, Any, Tuple, Union, Optional, Sequence, Mapping
+from typing import Type, TypeVar, overload, Any, Tuple, Union, Optional, Sequence, Mapping, TypeAlias
 
 T = TypeVar("T")
 T1 = TypeVar("T1")
@@ -89,7 +91,7 @@ class Session(sqlalchemy.orm.Session):
       statement: TypedReturnsRows[Tuple[T]],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: Optional[Mapping[str, Any]] = None,
+      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
@@ -102,7 +104,7 @@ class Session(sqlalchemy.orm.Session):
       statement: TypedReturnsRows[Tuple[T1, T2]],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: Optional[Mapping[str, Any]] = None,
+      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
@@ -115,7 +117,7 @@ class Session(sqlalchemy.orm.Session):
       statement: TypedReturnsRows[Tuple[T1, T2, T3]],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: Optional[Mapping[str, Any]] = None,
+      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
@@ -128,31 +130,18 @@ class Session(sqlalchemy.orm.Session):
       statement: TypedReturnsRows[Tuple[T1, T2, T3, T4]],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: Optional[Mapping[str, Any]] = None,
+      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
   ) -> Result[Tuple[T1, T2, T3, T4]]: ...
-
-  # Fallback for 5+ entities or any other Select
-  @overload
-  def execute(
-      self,
-      statement: TypedReturnsRows[Any],
-      params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
-      *,
-      execution_options: Optional[Mapping[str, Any]] = None, 
-      bind_arguments: Optional[dict[str, Any]] = None,
-      _parent_execute_state: Optional[Any] = None,
-      _add_event: Optional[Any] = None,
-  ) -> Result[Any]: ...
 
   def execute( 
       self,
       statement: TypedReturnsRows[Any],
       params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
       *,
-      execution_options: Optional[Mapping[str, Any]] = None,
+      execution_options: OrmExecuteOptionsParameter = EMPTY_DICT,
       bind_arguments: Optional[dict[str, Any]] = None,
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
@@ -167,10 +156,10 @@ class Session(sqlalchemy.orm.Session):
       When used with our custom Select class or Query class that have been filtered
       with .authorized(), the authorization filtering will be applied.
       """
-      return super().execute(  # type: ignore[misc]
+      return super().execute( 
           statement,
           params,
-          execution_options=execution_options, # type: ignore[arg-type]
+          execution_options=execution_options, 
           bind_arguments=bind_arguments,
           _parent_execute_state=_parent_execute_state,
           _add_event=_add_event,
