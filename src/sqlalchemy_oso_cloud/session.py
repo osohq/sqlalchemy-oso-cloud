@@ -94,7 +94,6 @@ class Session(sqlalchemy.orm.Session):
       """
       return super().query(*entities, **kwargs)
 
-  # Execute overloads for our custom Select class
   # Single entity
   @overload # type: ignore[override]
   def execute(
