@@ -1,8 +1,22 @@
 import sqlalchemy.orm
 from .query import Query
-from sqlalchemy.engine import Row
+from sqlalchemy.engine import Row, Result
 from sqlalchemy.orm.attributes import InstrumentedAttribute
-from typing import Type, TypeVar, overload, Any, Tuple, Union
+
+from sqlalchemy.sql.selectable import TypedReturnsRows
+from typing import Type, TypeVar, overload, Any, Tuple, Union, Optional, Sequence, Mapping, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm._typing import OrmExecuteOptionsParameter
+    from sqlalchemy.util._collections import EMPTY_DICT
+else:
+    try:
+        from sqlalchemy.orm._typing import OrmExecuteOptionsParameter
+        from sqlalchemy.util._collections import EMPTY_DICT
+    except ImportError:
+        OrmExecuteOptionsParameter = Mapping[str, Any]  # type: ignore[misc]
+        EMPTY_DICT = {}  # type: ignore[assignment]
+   
 
 T = TypeVar("T")
 T1 = TypeVar("T1")
@@ -79,3 +93,97 @@ class Session(sqlalchemy.orm.Session):
       All other queries types return Query[Any].
       """
       return super().query(*entities, **kwargs)
+
+  # Single entity
+  @overload # type: ignore[override]
+  def execute(
+      self,
+      statement: TypedReturnsRows[Tuple[T]],
+      params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
+      *,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
+      bind_arguments: Optional[dict[str, Any]] = None,
+      _parent_execute_state: Optional[Any] = None,
+      _add_event: Optional[Any] = None,
+  ) -> Result[Tuple[T]]: ...
+
+  # Two entities
+  @overload
+  def execute(
+      self,
+      statement: TypedReturnsRows[Tuple[T1, T2]],
+      params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
+      *,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
+      bind_arguments: Optional[dict[str, Any]] = None,
+      _parent_execute_state: Optional[Any] = None,
+      _add_event: Optional[Any] = None,
+  ) -> Result[Tuple[T1, T2]]: ...
+
+  # Three entities
+  @overload
+  def execute(
+      self,
+      statement: TypedReturnsRows[Tuple[T1, T2, T3]],
+      params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
+      *,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
+      bind_arguments: Optional[dict[str, Any]] = None,
+      _parent_execute_state: Optional[Any] = None,
+      _add_event: Optional[Any] = None,
+  ) -> Result[Tuple[T1, T2, T3]]: ...
+
+  # Four entities
+  @overload
+  def execute(
+      self,
+      statement: TypedReturnsRows[Tuple[T1, T2, T3, T4]],
+      params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
+      *,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
+      bind_arguments: Optional[dict[str, Any]] = None,
+      _parent_execute_state: Optional[Any] = None,
+      _add_event: Optional[Any] = None,
+  ) -> Result[Tuple[T1, T2, T3, T4]]: ...
+  
+  # Fallback overload
+  @overload
+  def execute( 
+      self,
+      statement: Any,
+      params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
+      *,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
+      bind_arguments: Optional[dict[str, Any]] = None,
+      _parent_execute_state: Optional[Any] = None,
+      _add_event: Optional[Any] = None,
+  ) -> Result[Any]: ...
+
+  def execute( 
+      self,
+      statement: TypedReturnsRows[Any],
+      params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
+      *,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
+      bind_arguments: Optional[dict[str, Any]] = None,
+      _parent_execute_state: Optional[Any] = None,
+      _add_event: Optional[Any] = None,
+  ) -> Result[Any]:
+      """
+      Execute a SQL expression construct.
+
+      This method supports all the same arguments as
+      [`sqlalchemy.orm.Session.execute`](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.execute)
+      and returns appropriate Result types based on the statement being executed.
+
+      When used with our custom Select class or Query class that have been filtered
+      with .authorized(), the authorization filtering will be applied.
+      """
+      return super().execute( 
+          statement,
+          params,
+          execution_options=execution_options, 
+          bind_arguments=bind_arguments,
+          _parent_execute_state=_parent_execute_state,
+          _add_event=_add_event,
+      )
