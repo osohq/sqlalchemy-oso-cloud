@@ -146,6 +146,19 @@ class Session(sqlalchemy.orm.Session):
       _parent_execute_state: Optional[Any] = None,
       _add_event: Optional[Any] = None,
   ) -> Result[Tuple[T1, T2, T3, T4]]: ...
+  
+  # Fallback overload
+  @overload
+  def execute( 
+      self,
+      statement: Any,
+      params: Optional[Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]] = None,
+      *,
+      execution_options: "OrmExecuteOptionsParameter" = EMPTY_DICT,
+      bind_arguments: Optional[dict[str, Any]] = None,
+      _parent_execute_state: Optional[Any] = None,
+      _add_event: Optional[Any] = None,
+  ) -> Result[Any]: ...
 
   def execute( 
       self,
