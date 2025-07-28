@@ -4,8 +4,12 @@ Test compatibility with pgvector-sqlalchemy
 import numpy as np
 import pytest
 from oso_cloud import Value
-from sqlalchemy import select as sqla_select, text
-from sqlalchemy_oso_cloud import select, authorized, Session as OsoSession
+from sqlalchemy import select as sqla_select
+from sqlalchemy import text
+
+from sqlalchemy_oso_cloud import Session as OsoSession
+from sqlalchemy_oso_cloud import authorized, select
+
 from .models import Document, Organization
 
 if not hasattr(Document, 'embedding'):

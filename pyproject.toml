@@ -30,3 +30,6 @@ numpy = [
     { version = ">=1.21.0,<2.1.0", python = "<3.10" },
     { version = ">=2.1.0,<3.0", python = ">=3.10" },
 ]
+
+[tool.ruff.lint]
+extend-select = ["I"]

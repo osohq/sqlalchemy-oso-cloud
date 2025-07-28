@@ -1,6 +1,7 @@
+from typing import Optional, Type, TypeVar
+
 import sqlalchemy.orm
 from oso_cloud import Value
-from typing import Type, TypeVar, Optional
 
 from .auth import _apply_authorization_options
 from .oso import get_oso
