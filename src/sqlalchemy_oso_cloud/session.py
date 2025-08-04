@@ -1,8 +1,10 @@
+from typing import Any, Tuple, Type, TypeVar, Union, overload
+
 import sqlalchemy.orm
-from .query import Query
 from sqlalchemy.engine import Row
 from sqlalchemy.orm.attributes import InstrumentedAttribute
-from typing import Type, TypeVar, overload, Any, Tuple, Union
+
+from .query import Query
 
 T = TypeVar("T")
 T1 = TypeVar("T1")

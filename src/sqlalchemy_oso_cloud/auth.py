@@ -1,7 +1,9 @@
-from sqlalchemy import literal_column, ColumnClause
-from sqlalchemy.orm import with_loader_criteria, LoaderCriteriaOption
+from typing import TYPE_CHECKING, Callable, List, Optional, Set, Type, Union
+
 from oso_cloud import Value
-from typing import List, Set, Type, Callable, Union, Optional, TYPE_CHECKING
+from sqlalchemy import ColumnClause, literal_column
+from sqlalchemy.orm import LoaderCriteriaOption, with_loader_criteria
+
 from .orm import Resource
 from .oso import get_oso
 

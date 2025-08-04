@@ -1,7 +1,9 @@
-from pgvector.sqlalchemy import Vector # type: ignore
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from pgvector.sqlalchemy import Vector  # type: ignore
 from sqlalchemy import ForeignKey
-from sqlalchemy_oso_cloud.orm import Resource, relation, attribute, remote_relation
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from sqlalchemy_oso_cloud.orm import Resource, attribute, relation, remote_relation
+
 
 class Base(DeclarativeBase):
   pass

@@ -1,6 +1,8 @@
+from typing import TypeVar
+
 import sqlalchemy.sql
 from oso_cloud import Value
-from typing import  TypeVar
+
 from .auth import _apply_authorization_options
 
 Self = TypeVar("Self", bound="Select")

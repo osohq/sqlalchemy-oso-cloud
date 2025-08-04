@@ -1,16 +1,20 @@
 import socket
-from testcontainers.core.container import DockerContainer  # type: ignore
-from testcontainers.postgres import PostgresContainer  # type: ignore
-from testcontainers.core.waiting_utils import wait_for, wait_container_is_ready  # type: ignore
+
+import pytest
+from oso_cloud import Oso, Value
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.exc import OperationalError
-import pytest
 from sqlalchemy.orm import Session
-from oso_cloud import Oso, Value
+from testcontainers.core.container import DockerContainer  # type: ignore
+from testcontainers.core.waiting_utils import (  # type: ignore
+  wait_container_is_ready,
+  wait_for,
+)
+from testcontainers.postgres import PostgresContainer  # type: ignore
 
 import sqlalchemy_oso_cloud
 
-from .models import Base, Organization, Document
+from .models import Base, Document, Organization
 
 
 @pytest.fixture(scope="session")

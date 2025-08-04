@@ -1,12 +1,14 @@
-from oso_cloud import Oso, Value
-from sqlalchemy import text, func, select as sqla_select
-from sqlalchemy.orm import Session, joinedload
-from .models import Document, Base, Organization
 import yaml
-
+from oso_cloud import Oso, Value
+from sqlalchemy import func, text
+from sqlalchemy import select as sqla_select
+from sqlalchemy.orm import Session, joinedload
 
 import sqlalchemy_oso_cloud
-from sqlalchemy_oso_cloud import select, authorized
+from sqlalchemy_oso_cloud import authorized, select
+
+from .models import Base, Document, Organization
+
 
 # This is the part our goal is to make nicer
 def test_manual(oso: Oso, session: Session, alice: Value, bob: Value):

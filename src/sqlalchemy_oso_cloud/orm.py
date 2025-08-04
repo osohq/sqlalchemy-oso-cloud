@@ -3,10 +3,11 @@ Utilities for [declaratively mapping](https://docs.sqlalchemy.org/en/20/orm/mapp
 [authorization data](https://www.osohq.com/docs/authorization-data) in your ORM models.
 """
 
-from typing import Callable, Optional, Protocol, Any
-from typing_extensions import ParamSpec, TypeVar, Concatenate
+from typing import Any, Callable, Optional, Protocol
 
 from sqlalchemy.orm import MappedColumn, Relationship, mapped_column, relationship
+from typing_extensions import Concatenate, ParamSpec, TypeVar
+
 
 class Resource:
   """
