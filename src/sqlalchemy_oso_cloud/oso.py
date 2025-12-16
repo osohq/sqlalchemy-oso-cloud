@@ -1,15 +1,21 @@
 import os
-import yaml
+from tempfile import NamedTemporaryFile
+from typing import Optional, TypedDict, Union
 
-from typing import TypedDict, Optional, Union
+import yaml
 from oso_cloud import Oso
 from sqlalchemy import select
-from sqlalchemy.orm import Mapper, RelationshipProperty, registry, ColumnProperty
+from sqlalchemy.orm import ColumnProperty, Mapper, RelationshipProperty, registry
 from sqlalchemy.sql.elements import NamedColumn
 from sqlalchemy.sql.sqltypes import Boolean, Integer, String, TypeEngine
-from tempfile import NamedTemporaryFile
 
-from .orm import _ATTRIBUTE_INFO_KEY, Resource, _RELATION_INFO_KEY, _REMOTE_RELATION_INFO_KEY
+from .orm import (
+  _ATTRIBUTE_INFO_KEY,
+  _RELATION_INFO_KEY,
+  _REMOTE_RELATION_INFO_KEY,
+  Resource,
+)
+
 
 class FactConfig(TypedDict):
   query: str

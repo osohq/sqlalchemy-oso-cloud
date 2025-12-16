@@ -1,7 +1,10 @@
+from typing import TypeVar
+
 import sqlalchemy.sql
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from oso_cloud import Value
 from typing import  TypeVar, Generic, Any, overload, Type, Tuple, Union
+
 from .auth import _apply_authorization_options
 
 Self = TypeVar("Self", bound="Select")
